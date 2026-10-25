@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* Animatable so the workspace accent can transition between colors. */
+@property --accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2f5d8a;
+}
+
+:root {
+  --paper: #f5efe3;
+  --panel: #ede5d4;
+  --surface: #fbf8f1;
+  --ink: #2a251f;
+  --ink-muted: #6b6156;
+  --border: #dcd2bf;
+  --rule: #e3d9c6;
+  --field-line: #cfc4ae;
+  --sticky: #f2de8f;
+  --error: #a33a26;
+  --on-accent: #ffffff;
+
+  --rule-gap: 1.75rem; /* distance between notebook lines */
+  --shadow-paper: 0 1px 2px rgb(42 37 31 / 0.08), 0 6px 16px -6px rgb(42 37 31 / 0.18);
+}
+
+/* Applied on the workspace container. Derived tokens recompute from --accent. */
+.accent-scope {
+  --accent-soft: color-mix(in oklch, var(--accent) 16%, var(--paper));
+  --accent-tape: color-mix(in oklch, var(--accent) 30%, transparent);
+  transition: --accent 450ms ease;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-border: var(--border);
+  --color-rule: var(--rule);
+  --color-field-line: var(--field-line);
+  --color-sticky: var(--sticky);
+  --color-error: var(--error);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-tape: var(--accent-tape);
+  --color-on-accent: var(--on-accent);
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-hand: var(--font-caveat), cursive;
+  --font-mono: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  --shadow-paper: var(--shadow-paper);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft, var(--rule));
+}
+
+@utility ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--rule-gap) - 1px),
+    var(--rule) calc(var(--rule-gap) - 1px),
+    var(--rule) var(--rule-gap)
+  );
+  line-height: var(--rule-gap);
+}
+
+@utility dot-grid {
+  background-color: var(--panel);
+  background-image: radial-gradient(var(--field-line) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
