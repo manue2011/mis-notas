@@ -32,10 +32,17 @@ let cached: Env | undefined;
 // that doesn't touch secrets.
 export function env(): Env {
   if (cached) return cached;
-  // Empty values in .env files count as unset.
-  const raw = Object.fromEntries(
-    Object.entries(process.env).filter(([, value]) => value !== ""),
+  // Empty values count as unset; stray spaces and quotes (easy to paste into
+  // a hosting dashboard) are dropped.
+  const raw: Record<string, string> = Object.fromEntries(
+    Object.entries(process.env)
+      .map(([key, value]) => [key, value?.trim().replace(/^(["'])(.*)\1$/, "$2")] as const)
+      .filter((entry): entry is readonly [string, string] => Boolean(entry[1])),
   );
+  // On Vercel, fall back to the project's production domain.
+  if (!isUrl(raw.BETTER_AUTH_URL) && raw.VERCEL_PROJECT_PRODUCTION_URL) {
+    raw.BETTER_AUTH_URL = `https://${raw.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
   const parsed = envSchema.safeParse(raw);
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
@@ -43,6 +50,10 @@ export function env(): Env {
   }
   cached = parsed.data;
   return cached;
+}
+
+function isUrl(value: string | undefined): boolean {
+  return z.url().safeParse(value).success;
 }
 
 export function googleEnabled(): boolean {
