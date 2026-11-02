@@ -15,6 +15,9 @@
     "auth:generate": "node --env-file=.env.local node_modules/auth/dist/index.mjs generate --config src/lib/auth/auth.ts --output src/db/schema/auth.ts"
   },
   "dependencies": {
+    "@blocknote/ariakit": "^0.57.0",
+    "@blocknote/core": "^0.57.0",
+    "@blocknote/react": "^0.57.0",
     "@neondatabase/serverless": "^1.2.0",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.45.4",

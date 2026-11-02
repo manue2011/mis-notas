@@ -28,7 +28,7 @@ export function AuthTitle({ children, intro }: { children: ReactNode; intro?: Re
     <div className="mb-8">
       <h1 className="inline-block font-serif text-[2.75rem] leading-tight font-medium tracking-tight">
         {children}
-        <HandUnderline className="mt-1 w-2/5" />
+        <HandUnderline className="mt-1" width="w-2/5" />
       </h1>
       {intro ? <p className="mt-3 text-ink-muted">{intro}</p> : null}
     </div>

@@ -8,12 +8,12 @@ import { cx } from "@/lib/cx";
 
 type Props = {
   sidebar: ReactNode;
-  topBar: ReactNode;
+  /** Each page renders its own <TopBar> as part of the content. */
   children: ReactNode;
 };
 
 /** Sidebar beside the content on desktop; a drop-down menu on mobile. */
-export function WorkspaceFrame({ sidebar, topBar, children }: Props) {
+export function WorkspaceFrame({ sidebar, children }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -57,10 +57,7 @@ export function WorkspaceFrame({ sidebar, topBar, children }: Props) {
         {sidebar}
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {topBar}
-        <main className="flex-1">{children}</main>
-      </div>
+      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
     </div>
   );
 }

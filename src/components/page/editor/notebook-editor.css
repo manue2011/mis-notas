@@ -1,0 +1,128 @@
+/* BlockNote dressed in the notebook design tokens (see globals.css). */
+
+.notebook-editor.bn-container[data-color-scheme] {
+  --bn-font-family: var(--font-serif);
+  --bn-border-radius: 8px;
+  --bn-colors-editor-background: transparent;
+  --bn-colors-editor-text: var(--ink);
+  --bn-colors-menu-background: var(--surface);
+  --bn-colors-menu-text: var(--ink);
+  --bn-colors-tooltip-background: var(--ink);
+  --bn-colors-tooltip-text: var(--paper);
+  --bn-colors-hovered-background: var(--panel);
+  --bn-colors-hovered-text: var(--ink);
+  --bn-colors-selected-background: var(--accent-soft);
+  --bn-colors-selected-text: var(--ink);
+  --bn-colors-disabled-background: var(--panel);
+  --bn-colors-disabled-text: var(--ink-muted);
+  --bn-colors-shadow: rgb(42 37 31 / 0.14);
+  --bn-colors-border: var(--border);
+  --bn-colors-side-menu: var(--ink-muted);
+}
+
+/* BlockNote hard-codes Inter here (off-limits in this design). */
+.notebook-editor .bn-default-styles {
+  font-family: var(--font-serif);
+}
+
+/* Menus and toolbars are interface, not notes. */
+.notebook-editor .bn-toolbar,
+.notebook-editor .bn-suggestion-menu,
+.notebook-editor .bn-side-menu,
+.notebook-editor [role="menu"],
+.notebook-editor [role="listbox"],
+.notebook-editor [role="tooltip"] {
+  font-family: var(--font-sans);
+}
+
+/* Ariakit highlights items in a bright stock blue; use the soft accent instead. */
+.notebook-editor .bn-ak-menu-item[data-active-item],
+.notebook-editor .bn-ak-menu-item[aria-selected="true"],
+.notebook-editor .bn-ak-menu-item:hover,
+.notebook-editor .bn-ak-select-item[data-active-item],
+.notebook-editor .bn-ak-tab[aria-selected="true"] {
+  color: var(--ink);
+  background-color: var(--accent-soft);
+}
+
+/* Text sits on the notebook lines. */
+.notebook-editor .bn-editor {
+  padding-inline: 0;
+  font-size: 1.125rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--rule-gap) - 1px),
+    var(--rule) calc(var(--rule-gap) - 1px),
+    var(--rule) var(--rule-gap)
+  );
+}
+
+.notebook-editor .bn-block-outer {
+  line-height: var(--rule-gap);
+}
+
+.notebook-editor .bn-block-content {
+  padding-block: 0;
+}
+
+.notebook-editor .bn-inline-content {
+  line-height: var(--rule-gap);
+}
+
+.notebook-editor [data-content-type="heading"] .bn-inline-content {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Placeholders are a hint, not text. */
+.notebook-editor .bn-inline-content:has(> .ProseMirror-trailingBreak:only-child)::before {
+  color: color-mix(in oklch, var(--ink-muted) 75%, transparent);
+  font-style: normal;
+}
+
+/* Task boxes drawn in the workspace accent; BlockNote strikes checked items through. */
+.notebook-editor [data-content-type="checkListItem"] > div > input {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin-block: calc((var(--rule-gap) - 18px) / 2);
+  border: 1.5px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface);
+  transition: background-color 150ms;
+}
+
+.notebook-editor [data-content-type="checkListItem"] > div > input:checked {
+  background: var(--accent);
+}
+
+.notebook-editor [data-content-type="checkListItem"] > div > input:checked::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border: 2px solid var(--on-accent);
+  border-top: 0;
+  border-right: 0;
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.notebook-editor [data-content-type="checkListItem"] > div > input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.notebook-editor [data-content-type="checkListItem"][data-checked="true"] .bn-inline-content {
+  color: var(--ink-muted);
+}
+
+.notebook-editor [data-content-type="quote"] {
+  font-style: italic;
+}
+
+/* Neutral rule: colored side borders are off-limits in this design. */
+.notebook-editor [data-content-type="quote"] blockquote {
+  border-left-color: var(--field-line);
+}

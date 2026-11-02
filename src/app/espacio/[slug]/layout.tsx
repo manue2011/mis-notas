@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import { AccentScope } from "@/components/ui/AccentScope";
 import { RememberWorkspace } from "@/components/workspace/RememberWorkspace";
 import { Sidebar } from "@/components/workspace/Sidebar";
-import { TopBar } from "@/components/workspace/TopBar";
 import { WorkspaceFrame } from "@/components/workspace/WorkspaceFrame";
 import { isSuperadmin, requireUser } from "@/lib/auth/session";
+import { listPages } from "@/lib/pages/queries";
 import { requireWorkspaceBySlug } from "@/lib/workspace/access";
 import { listMyWorkspaces } from "@/lib/workspace/queries";
 
@@ -24,9 +24,10 @@ async function WorkspaceShell({
   children: React.ReactNode;
 }) {
   const { slug } = await params;
-  const [access, workspaces, user] = await Promise.all([
+  const [access, workspaces, pages, user] = await Promise.all([
     requireWorkspaceBySlug(slug),
     listMyWorkspaces(),
+    listPages(slug),
     requireUser(),
   ]);
 
@@ -38,10 +39,10 @@ async function WorkspaceShell({
           <Sidebar
             access={access}
             workspaces={workspaces}
+            pages={pages}
             user={{ name: user.name, email: user.email, superadmin: isSuperadmin(user) }}
           />
         }
-        topBar={<TopBar workspaceName={access.name} slug={access.slug} />}
       >
         {children}
       </WorkspaceFrame>

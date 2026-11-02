@@ -1,8 +1,10 @@
 import { Logo } from "@/components/ui/Logo";
-import { MarginNote } from "@/components/ui/MarginNote";
+import type { PageSummary } from "@/lib/pages/queries";
 import type { WorkspaceAccess } from "@/lib/workspace/access";
 import { can } from "@/lib/workspace/access";
 import type { WorkspaceSummary } from "@/lib/workspace/queries";
+import { NewPageButton } from "./NewPageButton";
+import { PageList } from "./PageList";
 import { SidebarSection } from "./SidebarSection";
 import { UserMenu } from "./UserMenu";
 import { WorkspaceAccentPicker } from "./WorkspaceAccentPicker";
@@ -11,10 +13,11 @@ import { WorkspaceNav } from "./WorkspaceNav";
 type Props = {
   access: WorkspaceAccess;
   workspaces: WorkspaceSummary[];
+  pages: PageSummary[];
   user: { name: string; email: string; superadmin: boolean };
 };
 
-export function Sidebar({ access, workspaces, user }: Props) {
+export function Sidebar({ access, workspaces, pages, user }: Props) {
   return (
     <div className="flex h-full flex-col gap-7 px-4 py-6">
       <Logo className="hidden px-2 md:inline-flex" />
@@ -31,8 +34,10 @@ export function Sidebar({ access, workspaces, user }: Props) {
         </SidebarSection>
       ) : null}
       <SidebarSection title="Páginas">
-        {/* Step 7 fills this in. */}
-        <MarginNote className="px-2 text-lg">aún no hay ninguna página</MarginNote>
+        <PageList slug={access.slug} pages={pages} />
+        {can(access.role, { page: ["create"] }) ? (
+          <NewPageButton organizationId={access.organizationId} />
+        ) : null}
       </SidebarSection>
       <div className="mt-auto">
         <UserMenu {...user} />

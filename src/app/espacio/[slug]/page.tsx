@@ -1,38 +1,62 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { MarginNote } from "@/components/ui/MarginNote";
 import { StickyNote } from "@/components/ui/StickyNote";
-import { requireWorkspaceBySlug } from "@/lib/workspace/access";
+import { NewPageButton } from "@/components/workspace/NewPageButton";
+import { TopBar } from "@/components/workspace/TopBar";
+import { getLastEditedPageId } from "@/lib/pages/queries";
+import { can, requireWorkspaceBySlug } from "@/lib/workspace/access";
 
 export default function WorkspacePage({ params }: PageProps<"/espacio/[slug]">) {
   return (
     <Suspense fallback={null}>
-      <EmptyWorkspace params={params} />
+      <WorkspaceHome params={params} />
     </Suspense>
   );
 }
 
-// Placeholder until pages exist (step 7).
-async function EmptyWorkspace({ params }: { params: PageProps<"/espacio/[slug]">["params"] }) {
+// Opens the last edited page; with no pages yet, invites you to write the first.
+async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">["params"] }) {
   const { slug } = await params;
   const access = await requireWorkspaceBySlug(slug);
+  const lastPageId = await getLastEditedPageId(slug);
+  if (lastPageId) redirect(`/espacio/${slug}/p/${lastPageId}`);
+
+  const canCreate = can(access.role, { page: ["create"] });
 
   return (
-    <div className="max-w-3xl px-6 py-12 md:px-16 md:py-16">
-      <h1 className="inline-block font-serif text-4xl font-medium tracking-tight md:text-5xl">
-        {access.name}
-        <HandUnderline className="mt-1" />
-      </h1>
-      <div className="ruled mt-10 max-w-xl font-serif text-lg">
-        <p>Este cuaderno está recién estrenado: ni una mancha de tinta todavía.</p>
-        <p>Muy pronto podrás llenarlo de páginas, listas y pantallazos.</p>
+    <>
+      <TopBar crumbs={[{ label: access.name }]} />
+      <div className="max-w-3xl px-6 py-12 md:px-16 md:py-16">
+        <h1 className="inline-block font-serif text-4xl font-medium tracking-tight md:text-5xl">
+          {access.name}
+          <HandUnderline className="mt-1" />
+        </h1>
+        <div className="ruled mt-10 max-w-xl font-serif text-lg">
+          <p>Este cuaderno está recién estrenado: ni una mancha de tinta todavía.</p>
+          <p>
+            {canCreate
+              ? "Empieza por una página: unas notas, una lista, lo que tengas en la cabeza."
+              : "Cuando tus compañeros escriban la primera página, aparecerá aquí."}
+          </p>
+        </div>
+        <div className="mt-12 flex flex-wrap items-start gap-10">
+          {canCreate ? (
+            <div className="flex flex-col items-start gap-3">
+              <NewPageButton
+                organizationId={access.organizationId}
+                variant="primary"
+                label="Escribir la primera página"
+              />
+              <MarginNote className="-rotate-1">↑ el resto, después</MarginNote>
+            </div>
+          ) : null}
+          <StickyNote className="w-60" rotate={-2}>
+            Las mejores notas empiezan torcidas. Ya se pasarán a limpio.
+          </StickyNote>
+        </div>
       </div>
-      <div className="mt-14 flex flex-wrap items-start gap-10">
-        <StickyNote className="w-60" rotate={-2}>
-          Primera tarea: escribir algo que merezca la pena guardar.
-        </StickyNote>
-        <MarginNote className="mt-6 rotate-2">← las páginas llegan en el siguiente paso</MarginNote>
-      </div>
-    </div>
+    </>
   );
 }
