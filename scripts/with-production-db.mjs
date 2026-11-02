@@ -8,8 +8,7 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { createInterface } from "node:readline/promises";
-import { stdin, stdout } from "node:process";
+import { ask } from "./prompt.mjs";
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
@@ -25,9 +24,7 @@ if (!command) {
   process.exit(1);
 }
 
-const rl = createInterface({ input: stdin, output: stdout });
-const answer = await rl.question(`Vas a ejecutar "${[command, ...args].join(" ")}" contra PRODUCCIÓN. Escribe "si" para seguir: `);
-rl.close();
+const answer = await ask(`Vas a ejecutar "${[command, ...args].join(" ")}" contra PRODUCCIÓN. Escribe "si" para seguir: `);
 if (answer.trim().toLowerCase() !== "si") {
   console.log("Cancelado.");
   process.exit(1);

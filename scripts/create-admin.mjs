@@ -6,11 +6,9 @@
 // Usage: npm run admin:create
 
 import { randomBytes } from "node:crypto";
-import { createInterface } from "node:readline/promises";
-import { stdin, stdout } from "node:process";
-import { Writable } from "node:stream";
 import { neon } from "@neondatabase/serverless";
 import { hashPassword } from "better-auth/crypto";
+import { ask } from "./prompt.mjs";
 
 const SUPERADMIN_ROLE = "superadmin"; // keep in sync with src/lib/auth/admin-permissions.ts
 const MIN_PASSWORD = 8;
@@ -22,42 +20,21 @@ if (!process.env.DATABASE_URL) {
 
 const sql = neon(process.env.DATABASE_URL);
 
-// Output goes through a stream that can be muted, so passwords aren't echoed.
-let muted = false;
-const output = new Writable({
-  write(chunk, _encoding, done) {
-    if (!muted) stdout.write(chunk);
-    done();
-  },
-});
-const rl = createInterface({ input: stdin, output, terminal: Boolean(stdin.isTTY) });
-
-async function askHidden(question) {
-  stdout.write(question);
-  muted = true;
-  try {
-    return await rl.question("");
-  } finally {
-    muted = false;
-    stdout.write("\n");
-  }
-}
-
 function newId() {
   return randomBytes(24).toString("base64url");
 }
 
 try {
-  const email = (await rl.question("Correo: ")).trim().toLowerCase();
+  const email = (await ask("Correo: ")).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Ese correo no parece válido.");
 
   const [existing] = await sql`select id, name from "user" where email = ${email}`;
-  const name = existing ? existing.name : (await rl.question("Nombre: ")).trim();
+  const name = existing ? existing.name : (await ask("Nombre: ")).trim();
   if (!name) throw new Error("El nombre no puede estar vacío.");
 
-  const password = await askHidden("Contraseña (mínimo 8 caracteres): ");
+  const password = await ask("Contraseña (mínimo 8 caracteres): ", { secret: true });
   if (password.length < MIN_PASSWORD) throw new Error("La contraseña es demasiado corta.");
-  if (password !== (await askHidden("Repite la contraseña: "))) {
+  if (password !== (await ask("Repite la contraseña: ", { secret: true }))) {
     throw new Error("Las contraseñas no coinciden.");
   }
 
@@ -86,6 +63,4 @@ try {
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
-} finally {
-  rl.close();
 }
