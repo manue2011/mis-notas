@@ -7,6 +7,7 @@ import { PasswordField } from "@/components/ui/PasswordField";
 import { TextField } from "@/components/ui/TextField";
 import { authClient } from "@/lib/auth/client";
 import { authErrorMessage } from "@/lib/auth/error-messages";
+import { safeNextPath } from "@/lib/invites/rules";
 import { FormAlert } from "./FormAlert";
 import { ForgotPasswordButton, ForgotPasswordNote } from "./ForgotPasswordHint";
 import { GoogleButton } from "./GoogleButton";
@@ -15,7 +16,10 @@ import { OrDivider } from "./OrDivider";
 export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
   // Google sends errors back as ?error=<code>.
-  const callbackError = useSearchParams().get("error");
+  const searchParams = useSearchParams();
+  const callbackError = searchParams.get("error");
+  // e.g. back to a workspace invite after signing in.
+  const next = safeNextPath(searchParams.get("next")) ?? "/";
   const [error, setError] = useState<string | null>(
     callbackError ? authErrorMessage(callbackError) : null,
   );
@@ -36,7 +40,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
       setError(authErrorMessage(error));
       return;
     }
-    router.replace("/");
+    router.replace(next);
     router.refresh();
   }
 
@@ -46,6 +50,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
         <>
           <GoogleButton
             label="Continuar con Google"
+            callbackURL={next}
             errorCallbackURL="/iniciar-sesion"
             onError={setError}
           />

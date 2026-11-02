@@ -6,19 +6,21 @@ import { authClient } from "@/lib/auth/client";
 
 type Props = {
   label: string;
+  /** Where to land after signing in. */
+  callbackURL?: string;
   /** Where Google sends the user back to if something goes wrong. */
   errorCallbackURL: string;
   onError: (message: string) => void;
 };
 
-export function GoogleButton({ label, errorCallbackURL, onError }: Props) {
+export function GoogleButton({ label, callbackURL = "/", errorCallbackURL, onError }: Props) {
   const [pending, setPending] = useState(false);
 
   async function handleClick() {
     setPending(true);
     const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/",
+      callbackURL,
       errorCallbackURL,
     });
     // On success the browser is already leaving for Google.

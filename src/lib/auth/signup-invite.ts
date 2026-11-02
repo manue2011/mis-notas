@@ -1,7 +1,7 @@
-import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { signupInvite, user } from "@/db/schema";
+import { hashToken, newToken } from "@/lib/tokens";
 
 export const SIGNUP_COOKIE = "libreta_signup";
 export const SIGNUP_INVITE_TTL_DAYS = 7;
@@ -9,13 +9,9 @@ export const SIGNUP_INVITE_TTL_DAYS = 7;
 // forgotten cookie on a shared computer goes stale.
 export const SIGNUP_COOKIE_MAX_AGE = 60 * 60;
 
-export function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
 /** Creates an invite and returns the plain token. Only its hash is stored. */
 export async function createSignupInvite(input: { note: string | null; createdBy: string }) {
-  const token = randomBytes(32).toString("base64url");
+  const token = newToken();
   const expiresAt = new Date(Date.now() + SIGNUP_INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
   await db.insert(signupInvite).values({
     tokenHash: hashToken(token),

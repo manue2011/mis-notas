@@ -3,6 +3,7 @@ import type { PageSummary } from "@/lib/pages/queries";
 import type { WorkspaceAccess } from "@/lib/workspace/access";
 import { can } from "@/lib/workspace/access";
 import type { WorkspaceSummary } from "@/lib/workspace/queries";
+import { InviteTeamCard } from "./InviteTeamCard";
 import { NewPageButton } from "./NewPageButton";
 import { PageList } from "./PageList";
 import { SidebarSection } from "./SidebarSection";
@@ -39,7 +40,10 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
           <NewPageButton organizationId={access.organizationId} />
         ) : null}
       </SidebarSection>
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-5">
+        {can(access.role, { inviteLink: ["create"] }) ? (
+          <InviteTeamCard key={access.organizationId} organizationId={access.organizationId} />
+        ) : null}
         <UserMenu {...user} />
       </div>
     </div>

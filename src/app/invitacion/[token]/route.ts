@@ -5,8 +5,9 @@ import {
   SIGNUP_COOKIE,
   SIGNUP_COOKIE_MAX_AGE,
 } from "@/lib/auth/signup-invite";
+import { TOKEN_PATTERN } from "@/lib/tokens";
 
-const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+const tokenSchema = z.string().regex(TOKEN_PATTERN);
 
 // The link the superadmin shares. Stores the token in an httpOnly cookie and
 // moves on to /registro, so the token leaves the address bar and is sent along

@@ -6,12 +6,12 @@ import { googleEnabled } from "@/lib/env";
 
 export const metadata = { title: "Iniciar sesión" };
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: PageProps<"/iniciar-sesion">) {
   return (
     <AuthShell>
       <AuthTitle intro="Tus notas te están esperando donde las dejaste.">Hola de nuevo</AuthTitle>
       <Suspense fallback={null}>
-        <RedirectIfSignedIn />
+        <RedirectIfSignedIn searchParams={searchParams} />
       </Suspense>
       <Suspense fallback={<div className="h-80" />}>
         <LoginForm googleEnabled={googleEnabled()} />
