@@ -52,17 +52,25 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
     <>
       {googleEnabled ? (
         <>
-          <GoogleButton label="Crear cuenta con Google" errorCallbackURL="/registro" onError={setError} />
+          <GoogleButton label="Continuar con Google" errorCallbackURL="/registro" onError={setError} />
           <OrDivider />
         </>
       ) : null}
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <TextField label="Nombre" name="name" autoComplete="name" required maxLength={80} />
+        <TextField
+          label="Nombre"
+          name="name"
+          autoComplete="name"
+          required
+          maxLength={80}
+          placeholder="Cómo te verán tus compañeros"
+        />
         <TextField
           label="Correo"
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="tu@correo.com"
           required
           error={emailError}
           onChange={(e) => checkEmail(e.currentTarget.value)}

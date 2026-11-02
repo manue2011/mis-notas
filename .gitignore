@@ -42,3 +42,6 @@ next-env.d.ts
 
 !.env.example
 .neon
+
+# Design references (local only)
+refencias/

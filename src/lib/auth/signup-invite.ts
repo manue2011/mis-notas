@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { signupInvite } from "@/db/schema";
+import { signupInvite, user } from "@/db/schema";
 
 export const SIGNUP_COOKIE = "libreta_signup";
 export const SIGNUP_INVITE_TTL_DAYS = 7;
@@ -35,13 +35,15 @@ function usable(tokenHash: string) {
   );
 }
 
-export async function isSignupInviteUsable(token: string): Promise<boolean> {
+/** A usable invite with the name of whoever created it, or null. */
+export async function findUsableSignupInvite(token: string) {
   const [row] = await db
-    .select({ id: signupInvite.id })
+    .select({ id: signupInvite.id, inviterName: user.name })
     .from(signupInvite)
+    .leftJoin(user, eq(signupInvite.createdBy, user.id))
     .where(usable(hashToken(token)))
     .limit(1);
-  return Boolean(row);
+  return row ?? null;
 }
 
 /**

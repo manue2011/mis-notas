@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthFootnote, AuthShell, AuthTitle } from "@/components/auth/AuthShell";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { RedirectIfSignedIn } from "@/components/auth/RedirectIfSignedIn";
 import { googleEnabled } from "@/lib/env";
@@ -8,16 +8,15 @@ export const metadata = { title: "Iniciar sesión" };
 
 export default function LoginPage() {
   return (
-    <AuthShell title="Hola de nuevo" intro="Entra para seguir donde lo dejaste.">
+    <AuthShell>
+      <AuthTitle intro="Tus notas te están esperando donde las dejaste.">Hola de nuevo</AuthTitle>
       <Suspense fallback={null}>
         <RedirectIfSignedIn />
       </Suspense>
       <Suspense fallback={<div className="h-80" />}>
         <LoginForm googleEnabled={googleEnabled()} />
       </Suspense>
-      <p className="mt-10 text-sm text-ink-muted">
-        ¿Aún no tienes cuenta? Libreta funciona por invitación: pide un enlace al administrador.
-      </p>
+      <AuthFootnote>¿Aún no tienes cuenta? Pide un enlace de invitación al administrador.</AuthFootnote>
     </AuthShell>
   );
 }

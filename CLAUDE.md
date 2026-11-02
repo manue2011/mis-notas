@@ -184,6 +184,12 @@ grafito `#3A342D`. Todos permiten texto blanco encima.
 
 ### Pantallas
 
+Hay maquetas de referencia en `refencias/` (solo en local, fuera del repo; las de "Olvidé mi contraseña" y
+"Verifica tu correo" ya no aplican).
+
+Permisos de los espacios: todo pasa por `src/lib/workspace/access.ts`
+(`requireWorkspaceBySlug` / `requireWorkspaceById`); a quien no es miembro, 404.
+
 1. **Iniciar sesión** (`/iniciar-sesion`): Google, correo y contraseña (con
    botón para mostrarla), "¿La has olvidado?" muestra "Pídele al administrador
    que te la cambie". A la derecha, panel decorativo con pantallazo pegado y
@@ -192,10 +198,12 @@ grafito `#3A342D`. Todos permiten texto blanco encima.
    un mensaje explicándolo. Valida el formato del correo mientras se escribe.
 3. **Administración** (`/admin`, solo superadmin): crear enlaces de registro,
    enlaces pendientes, personas (cambiar contraseña, bloquear).
-4. **Pantalla principal:** barra lateral (logo, espacios, selector de color,
+4. **Nuevo espacio** (`/nuevo-espacio`): nombre y color, con vista previa del
+   color en toda la página. `/` lleva al último espacio abierto o aquí si no hay.
+5. **Pantalla principal** (`/espacio/[slug]`): barra lateral (logo, espacios, selector de color,
    buscador Ctrl K, páginas, tarjeta "Copiar enlace de invitación") y la página
    abierta con barra superior (ruta, avatares de quién está, botón Compartir).
-5. **Ajustes del espacio:** nombre, icono, color, tipografía, dominio
+6. **Ajustes del espacio:** nombre, icono, color, tipografía, dominio
    permitido, miembros y roles, enlaces de invitación.
 
 ## Fases

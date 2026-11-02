@@ -8,7 +8,7 @@ import { TextField } from "@/components/ui/TextField";
 import { authClient } from "@/lib/auth/client";
 import { authErrorMessage } from "@/lib/auth/error-messages";
 import { FormAlert } from "./FormAlert";
-import { ForgotPasswordHint } from "./ForgotPasswordHint";
+import { ForgotPasswordButton, ForgotPasswordNote } from "./ForgotPasswordHint";
 import { GoogleButton } from "./GoogleButton";
 import { OrDivider } from "./OrDivider";
 
@@ -20,6 +20,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
     callbackError ? authErrorMessage(callbackError) : null,
   );
   const [pending, setPending] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,7 +45,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
       {googleEnabled ? (
         <>
           <GoogleButton
-            label="Entrar con Google"
+            label="Continuar con Google"
             errorCallbackURL="/iniciar-sesion"
             onError={setError}
           />
@@ -52,19 +53,29 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
         </>
       ) : null}
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <TextField label="Correo" name="email" type="email" autoComplete="email" required />
-        <div className="flex flex-col gap-1">
+        <TextField
+          label="Correo"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="tu@correo.com"
+          required
+        />
+        <div>
           <PasswordField
             label="Contraseña"
             name="password"
             autoComplete="current-password"
             required
+            labelAside={
+              <ForgotPasswordButton open={forgotOpen} onToggle={() => setForgotOpen((v) => !v)} />
+            }
           />
-          <ForgotPasswordHint />
+          <ForgotPasswordNote open={forgotOpen} />
         </div>
         <FormAlert message={error} />
         <Button type="submit" pending={pending} className="w-full">
-          {pending ? "Entrando…" : "Iniciar sesión"}
+          {pending ? "Entrando…" : "Entrar"}
         </Button>
       </form>
     </>

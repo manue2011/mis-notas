@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import {
-  isSignupInviteUsable,
+  findUsableSignupInvite,
   SIGNUP_COOKIE,
   SIGNUP_COOKIE_MAX_AGE,
 } from "@/lib/auth/signup-invite";
@@ -14,7 +14,7 @@ const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export async function GET(request: NextRequest, ctx: RouteContext<"/invitacion/[token]">) {
   const { token } = await ctx.params;
   const parsed = tokenSchema.safeParse(token);
-  const valid = parsed.success && (await isSignupInviteUsable(parsed.data));
+  const valid = parsed.success && (await findUsableSignupInvite(parsed.data)) !== null;
 
   const target = new URL(valid ? "/registro" : "/registro?enlace=invalido", request.url);
   const response = NextResponse.redirect(target, 303);

@@ -8,11 +8,11 @@ export const metadata = { title: "Crear cuenta" };
 
 export default function SignupPage() {
   return (
-    <AuthShell title="Crear cuenta">
+    <AuthShell>
       <Suspense fallback={null}>
         <RedirectIfSignedIn />
       </Suspense>
-      <Suspense fallback={<div className="h-96" />}>
+      <Suspense fallback={<div className="h-[32rem]" />}>
         <SignupGate googleEnabled={googleEnabled()} />
       </Suspense>
     </AuthShell>

@@ -7,17 +7,22 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
   error?: string;
   /** Rendered inside the field, after the input (e.g. a show-password toggle). */
   trailing?: ReactNode;
+  /** Rendered at the end of the label row (e.g. a "forgot password?" link). */
+  labelAside?: ReactNode;
 };
 
-export function TextField({ label, hint, error, trailing, className, ...rest }: Props) {
+export function TextField({ label, hint, error, trailing, labelAside, className, ...rest }: Props) {
   const id = useId();
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
   return (
     <div className={cx("flex flex-col gap-1", className)}>
-      <label htmlFor={id} className="text-sm font-medium text-ink-muted">
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={id} className="text-sm font-medium text-ink">
+          {label}
+        </label>
+        {labelAside}
+      </div>
       <div
         className={cx(
           "flex items-center border-b-[1.5px] transition-colors duration-150",

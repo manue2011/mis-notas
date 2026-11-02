@@ -1,41 +1,32 @@
-import { MarginNote } from "@/components/ui/MarginNote";
 import { PinnedPhoto } from "@/components/ui/PinnedPhoto";
 import { StickyNote } from "@/components/ui/StickyNote";
 
 /** A corner of a desk: a taped screenshot of a page and a sticky note. */
 export function AuthDecor() {
   return (
-    <aside aria-hidden className="dot-grid relative hidden overflow-hidden border-l border-border lg:block">
-      <div className="absolute top-[18%] left-[12%]">
-        <PinnedPhoto caption="lo que hablamos el martes">
-          <FakePage />
-        </PinnedPhoto>
-      </div>
-      <StickyNote className="absolute right-[10%] bottom-[16%] w-56" rotate={2.5}>
-        Pasar a limpio las ideas del lanzamiento antes del viernes
+    <aside
+      aria-hidden
+      className="dot-grid hidden flex-col items-center justify-center gap-6 border-l border-border lg:flex"
+    >
+      <PinnedPhoto caption="la guía de exportación, por fin en un sitio" className="ml-16 rotate-[1.5deg]">
+        <FakeScreenshot />
+      </PinnedPhoto>
+      <StickyNote className="ml-40 w-72" rotate={-1.5}>
+        Notas, pantallazos y explicaciones de todo el equipo, en un solo cuaderno.
       </StickyNote>
-      <MarginNote className="absolute bottom-[9%] left-[16%] -rotate-3">
-        todo el equipo en el mismo cuaderno
-      </MarginNote>
     </aside>
   );
 }
 
-function FakePage() {
+function FakeScreenshot() {
   return (
-    <div className="flex w-72 flex-col gap-2.5 bg-paper p-5">
-      <span className="block h-3.5 w-36 rounded-sm bg-ink/80" />
-      <span className="block h-0.5 w-40 rounded-full bg-accent" />
-      <span className="mt-2 block h-2 w-full rounded-sm bg-rule" />
-      <span className="block h-2 w-11/12 rounded-sm bg-rule" />
-      <span className="block h-2 w-4/5 rounded-sm bg-rule" />
-      <span className="mt-2 flex items-center gap-2">
-        <span className="block size-3 rounded-[3px] border-[1.5px] border-accent" />
-        <span className="block h-2 w-32 rounded-sm bg-rule" />
-      </span>
-      <span className="flex items-center gap-2">
-        <span className="block size-3 rounded-[3px] border-[1.5px] border-accent bg-accent" />
-        <span className="block h-2 w-24 rounded-sm bg-rule" />
+    <div className="flex h-44 w-80 gap-3 bg-[#f3f1ec] p-3">
+      <span className="block w-1/3 rounded-sm bg-[#e7e3dc]" />
+      <span className="flex flex-1 flex-col gap-2 pt-1">
+        <span className="block h-3 w-3/4 rounded-sm bg-[#ddd7cd]" />
+        <span className="block h-2 w-full rounded-sm bg-[#e7e3dc]" />
+        <span className="block h-2 w-5/6 rounded-sm bg-[#e7e3dc]" />
+        <span className="block h-2 w-4/6 rounded-sm bg-[#e7e3dc]" />
       </span>
     </div>
   );
