@@ -111,6 +111,13 @@ CLOUDINARY_API_SECRET=
 
 Mantener un `.env.example` actualizado con estas claves vacías.
 
+Bases de datos: en local, `DATABASE_URL` apunta a la rama `dev` de Neon;
+producción (Vercel) usa la rama `main`. En `.env.local` hay además
+`PRODUCTION_DATABASE_URL(_UNPOOLED)` (solo local, nunca en Vercel) para:
+
+- `npm run db:migrate:prod`: aplicar migraciones a producción (pide confirmación).
+- `npm run admin:create:prod`: crear o recuperar el superadmin en producción.
+
 ## Diseño: estilo cuaderno
 
 La app NO debe parecer hecha por una IA. Prohibido: degradados decorativos,

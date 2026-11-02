@@ -12,6 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "admin:create": "node --env-file=.env.local scripts/create-admin.mjs",
+    "db:migrate:prod": "node scripts/with-production-db.mjs npx drizzle-kit migrate",
+    "admin:create:prod": "node scripts/with-production-db.mjs node scripts/create-admin.mjs",
     "auth:generate": "node --env-file=.env.local node_modules/auth/dist/index.mjs generate --config src/lib/auth/auth.ts --output src/db/schema/auth.ts"
   },
   "dependencies": {
