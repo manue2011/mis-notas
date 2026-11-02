@@ -4,16 +4,22 @@ import "@blocknote/core/style.css";
 import "@blocknote/ariakit/style.css";
 import "./notebook-editor.css";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { filterSuggestionItems } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/ariakit";
-import { useCreateBlockNote } from "@blocknote/react";
-import { pageDictionary, pageSchema } from "./schema";
-
-type PageBlock = (typeof pageSchema)["PartialBlock"];
+import { syntaxHighlighter } from "@blocknote/code-block";
+import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
+import { uploadImage, UploadError } from "@/lib/assets/upload-client";
+import { EditorContext, type PageEditorContext } from "./editor-context";
+import { pageDictionary, pageSchema, type PageBlock, type PageEditor } from "./schema";
+import { slashMenuItems } from "./slash-menu";
+import { uploadStore } from "./upload-store";
 
 export type NotebookEditorHandle = { focus: () => void };
 
 type Props = {
+  organizationId: string;
+  pageId: string;
   initialContent: unknown[];
   editable: boolean;
   onChange: (blocks: unknown[]) => void;
@@ -21,26 +27,81 @@ type Props = {
 };
 
 /** BlockNote dressed as a notebook page. Client-only; load it with next/dynamic. */
-export default function NotebookEditor({ initialContent, editable, onChange, onReady }: Props) {
-  const editor = useCreateBlockNote({
+export default function NotebookEditor({ organizationId, pageId, initialContent, editable, onChange, onReady }: Props) {
+  const uploadRef = useRef<((blockId: string, file: File) => void) | null>(null);
+  const editor: PageEditor = useCreateBlockNote({
     schema: pageSchema,
     dictionary: pageDictionary,
-    // An empty array isn't valid initial content; undefined gives one empty paragraph.
-    // The server validated it against the same block types.
+    extensions: [syntaxHighlighter],
+    // The server validated it against the same block types. An empty array
+    // isn't valid initial content; undefined gives one empty paragraph.
     initialContent: initialContent.length ? (initialContent as PageBlock[]) : undefined,
+    pasteHandler: ({ event, editor, defaultPasteHandler }) => {
+      const file = imageFromClipboard(event);
+      if (!file || !editable) return defaultPasteHandler();
+      const current = editor.getTextCursorPosition().block;
+      const [inserted] = editor.insertBlocks([{ type: "screenshot" }], current, "after");
+      uploadRef.current?.(inserted.id, file);
+      return true;
+    },
   });
+
+  const uploadInto = useCallback(
+    (blockId: string, file: File) => {
+      uploadStore.set(blockId, { progress: 0, error: null });
+      uploadImage(file, { organizationId, pageId }, (progress) =>
+        uploadStore.set(blockId, { progress, error: null }),
+      )
+        .then((image) => {
+          // The block may have been deleted while uploading.
+          if (editor.getBlock(blockId)) {
+            editor.updateBlock(blockId, {
+              props: { url: image.url, assetId: image.assetId, width: image.width, height: image.height },
+            });
+          }
+          uploadStore.clear(blockId);
+        })
+        .catch((error: unknown) => {
+          uploadStore.set(blockId, {
+            progress: 0,
+            error: error instanceof UploadError ? error.message : "No se ha podido subir la imagen.",
+          });
+        });
+    },
+    [editor, organizationId, pageId],
+  );
+  // The paste handler is created once with the editor; it reads the latest uploader.
+  useEffect(() => {
+    uploadRef.current = uploadInto;
+  }, [uploadInto]);
 
   useEffect(() => {
     onReady?.({ focus: () => editor.focus() });
   }, [editor, onReady]);
 
+  const context = useMemo<PageEditorContext>(() => ({ editable, uploadInto }), [editable, uploadInto]);
+
   return (
-    <BlockNoteView
-      editor={editor}
-      editable={editable}
-      theme="light"
-      onChange={() => onChange(editor.document)}
-      className="notebook-editor"
-    />
+    <EditorContext value={context}>
+      <BlockNoteView
+        editor={editor}
+        editable={editable}
+        theme="light"
+        slashMenu={false}
+        onChange={() => onChange(editor.document)}
+        className="notebook-editor"
+      >
+        <SuggestionMenuController
+          triggerCharacter="/"
+          getItems={async (query) => filterSuggestionItems(slashMenuItems(editor), query)}
+        />
+      </BlockNoteView>
+    </EditorContext>
   );
+}
+
+function imageFromClipboard(event: ClipboardEvent): File | null {
+  const files = event.clipboardData?.files;
+  if (!files) return null;
+  return Array.from(files).find((f) => f.type.startsWith("image/")) ?? null;
 }

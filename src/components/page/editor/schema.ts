@@ -1,5 +1,8 @@
-import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
+import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, type BlockNoteEditor } from "@blocknote/core";
 import { es } from "@blocknote/core/locales";
+import { codeBlockOptions } from "@blocknote/code-block";
+import { screenshotBlock } from "./blocks/ScreenshotBlock";
+import { stickyNoteBlock } from "./blocks/StickyNoteBlock";
 
 // Keep in sync with PAGE_BLOCK_TYPES in src/lib/pages/content.ts, which the
 // server validates against.
@@ -11,8 +14,19 @@ export const pageSchema = BlockNoteSchema.create({
     numberedListItem: defaultBlockSpecs.numberedListItem,
     checkListItem: defaultBlockSpecs.checkListItem,
     quote: defaultBlockSpecs.quote,
+    codeBlock: createCodeBlockSpec({ ...codeBlockOptions, defaultLanguage: "typescript" }),
+    screenshot: screenshotBlock,
+    stickyNote: stickyNoteBlock,
   },
 });
+
+export type PageEditor = BlockNoteEditor<
+  typeof pageSchema.blockSchema,
+  typeof pageSchema.inlineContentSchema,
+  typeof pageSchema.styleSchema
+>;
+
+export type PageBlock = (typeof pageSchema)["PartialBlock"];
 
 export const pageDictionary = {
   ...es,
@@ -23,5 +37,6 @@ export const pageDictionary = {
     bulletListItem: "Elemento",
     numberedListItem: "Elemento",
     checkListItem: "Tarea",
+    // screenshot and stickyNote hints live in notebook-editor.css.
   },
 };

@@ -62,6 +62,8 @@ export function PageView({ organizationId, pageId, title, content, updatedAt, up
       />
       <div className="mt-8">
         <NotebookEditor
+          organizationId={organizationId}
+          pageId={pageId}
           initialContent={content}
           editable={editable}
           onChange={contentSave.schedule}

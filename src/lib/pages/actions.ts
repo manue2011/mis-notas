@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { page } from "@/db/schema";
 import type { Permissions } from "@/lib/auth/permissions";
+import { env } from "@/lib/env";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 import { pageContentSchema, pageTitleSchema } from "./content";
 
@@ -59,8 +60,11 @@ export async function savePageContentAction(
   content: unknown,
 ): Promise<PageActionResult> {
   const ids = idsSchema.safeParse({ organizationId, pageId });
-  const parsed = pageContentSchema.safeParse(content);
   if (!ids.success) return { ok: false, error: "Página no válida." };
+  const parsed = pageContentSchema({
+    organizationId: ids.data.organizationId,
+    cloudName: env().CLOUDINARY_CLOUD_NAME,
+  }).safeParse(content);
   if (!parsed.success) {
     // Only our own (custom) messages are worded for people; zod's aren't.
     const custom = parsed.error.issues.find((issue) => issue.code === "custom");
