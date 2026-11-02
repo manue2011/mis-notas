@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
-import { safeNextPath } from "@/lib/invites/rules";
+import { APP_HOME, safeNextPath } from "@/lib/invites/rules";
 
 type Props = {
   /** The page's searchParams, to honor ?next= (only same-site paths). */
@@ -11,5 +11,5 @@ type Props = {
 export async function RedirectIfSignedIn({ searchParams }: Props) {
   if (!(await getSession())) return null;
   const next = (await searchParams)?.next;
-  redirect(safeNextPath(typeof next === "string" ? next : null) ?? "/");
+  redirect(safeNextPath(typeof next === "string" ? next : null) ?? APP_HOME);
 }

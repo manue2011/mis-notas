@@ -197,6 +197,12 @@ Hay maquetas de referencia en `refencias/` (solo en local, fuera del repo; las d
 Permisos de los espacios: todo pasa por `src/lib/workspace/access.ts`
 (`requireWorkspaceBySlug` / `requireWorkspaceById`); a quien no es miembro, 404.
 
+0. **Página principal** (`/`, pública): qué es Libreta, qué se puede hacer y
+   cómo se entra (solo por invitación). Arriba, "Iniciar sesión" o, con
+   sesión, "Mis libretas", "Administración" (superadmin) y "Cerrar sesión".
+   La app empieza en `/libretas`, que lleva al último espacio abierto (o a
+   crear el primero); es adonde se va tras iniciar sesión. El logo siempre
+   lleva a `/`.
 1. **Iniciar sesión** (`/iniciar-sesion`): Google, correo y contraseña (con
    botón para mostrarla), "¿La has olvidado?" muestra "Pídele al administrador
    que te la cambie". A la derecha, panel decorativo con pantallazo pegado y

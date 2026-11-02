@@ -24,7 +24,7 @@ export default function NotFound() {
               tengas acceso a ese espacio.
             </p>
             <Link href="/" className={buttonClasses("primary", "mt-8")}>
-              Volver a mis libretas
+              Ir a la página principal
             </Link>
           </div>
           <StickyNote className="w-64" rotate={3}>

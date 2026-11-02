@@ -13,7 +13,7 @@ export function SignOutButton({ className }: { className?: string }) {
   async function signOut() {
     setPending(true);
     await authClient.signOut();
-    router.replace("/iniciar-sesion");
+    router.replace("/");
     router.refresh();
   }
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { TextField } from "@/components/ui/TextField";
 import { authClient } from "@/lib/auth/client";
+import { APP_HOME } from "@/lib/invites/rules";
 import { authErrorMessage } from "@/lib/auth/error-messages";
 import { FormAlert } from "./FormAlert";
 import { GoogleButton } from "./GoogleButton";
@@ -44,7 +45,7 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
       setError(authErrorMessage(error));
       return;
     }
-    router.replace("/");
+    router.replace(APP_HOME);
     router.refresh();
   }
 

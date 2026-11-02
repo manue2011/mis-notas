@@ -4,23 +4,27 @@ import { ArrowLeft } from "lucide-react";
 import { InviteCreator } from "@/components/admin/InviteCreator";
 import { PendingInvites } from "@/components/admin/PendingInvites";
 import { UserList } from "@/components/admin/UserList";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import { AccentScope } from "@/components/ui/AccentScope";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { DEFAULT_ACCENT } from "@/lib/accent";
 import { requireSuperadmin } from "@/lib/auth/session";
+import { APP_HOME } from "@/lib/invites/rules";
 
 export const metadata = { title: "Administración" };
 
 export default function AdminPage() {
   return (
     <AccentScope accent={DEFAULT_ACCENT} className="min-h-screen">
-      <main className="max-w-3xl px-6 py-10 sm:px-12 lg:px-20">
+      {/* Gives the way out: logo home, "Mis libretas" and "Cerrar sesión". */}
+      <SiteHeader />
+      <main className="max-w-3xl px-6 pt-2 pb-16 sm:px-12 lg:px-20">
         <Link
-          href="/"
-          className="-ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-sm text-ink-muted hover:text-ink"
+          href={APP_HOME}
+          className="-ml-2 flex min-h-11 w-fit items-center gap-1.5 rounded-md px-2 text-sm text-ink-muted hover:text-ink"
         >
           <ArrowLeft size={16} strokeWidth={1.75} aria-hidden />
-          Volver a Libreta
+          Volver a mis libretas
         </Link>
         <h1 className="mt-6 inline-block font-serif text-4xl font-medium tracking-tight">
           Administración

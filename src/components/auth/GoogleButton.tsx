@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { authClient } from "@/lib/auth/client";
+import { APP_HOME } from "@/lib/invites/rules";
 
 type Props = {
   label: string;
@@ -13,7 +14,7 @@ type Props = {
   onError: (message: string) => void;
 };
 
-export function GoogleButton({ label, callbackURL = "/", errorCallbackURL, onError }: Props) {
+export function GoogleButton({ label, callbackURL = APP_HOME, errorCallbackURL, onError }: Props) {
   const [pending, setPending] = useState(false);
 
   async function handleClick() {

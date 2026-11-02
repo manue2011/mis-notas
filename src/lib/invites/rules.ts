@@ -29,6 +29,9 @@ export function emailMatchesDomain(email: string, allowedDomain: string | null):
   return email.toLowerCase().endsWith(`@${allowedDomain.toLowerCase().replace(/^@/, "")}`);
 }
 
+/** Where people land after signing in when nothing else is asked for. */
+export const APP_HOME = "/libretas";
+
 /** Only same-site paths, so ?next= can't send people to another site. */
 export function safeNextPath(value: string | null | undefined): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return null;

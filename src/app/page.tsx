@@ -1,26 +1,28 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
-import { listMyWorkspaces } from "@/lib/workspace/queries";
+import { Features } from "@/components/landing/Features";
+import { Hero } from "@/components/landing/Hero";
+import { HowToJoin } from "@/components/landing/HowToJoin";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { AccentScope } from "@/components/ui/AccentScope";
+import { DEFAULT_ACCENT } from "@/lib/accent";
 
-// Sends people to the last workspace they opened, or to create their first one.
+export const metadata = {
+  title: { absolute: "Libreta · Cuadernos compartidos para equipos pequeños" },
+  description:
+    "Un cuaderno compartido para tu equipo: páginas, listas de tareas, pantallazos, notas adhesivas y código. Solo por invitación.",
+};
+
+// Public home page. The app itself starts at /libretas.
 export default function Home() {
   return (
-    <Suspense fallback={<p className="px-6 py-16 text-ink-muted md:px-16">Buscando tu cuaderno…</p>}>
-      <GoToWorkspace />
-    </Suspense>
+    <AccentScope accent={DEFAULT_ACCENT} className="min-h-screen">
+      <SiteHeader />
+      <main>
+        <Hero />
+        <Features />
+        <HowToJoin />
+      </main>
+      <LandingFooter />
+    </AccentScope>
   );
-}
-
-async function GoToWorkspace() {
-  const session = await getSession();
-  if (!session) redirect("/iniciar-sesion");
-
-  const workspaces = await listMyWorkspaces();
-  if (workspaces.length === 0) redirect("/nuevo-espacio");
-
-  const last =
-    workspaces.find((w) => w.id === session.session.activeOrganizationId) ?? workspaces[0];
-  redirect(`/espacio/${last.slug}`);
-  return null;
 }

@@ -7,7 +7,7 @@ import { PasswordField } from "@/components/ui/PasswordField";
 import { TextField } from "@/components/ui/TextField";
 import { authClient } from "@/lib/auth/client";
 import { authErrorMessage } from "@/lib/auth/error-messages";
-import { safeNextPath } from "@/lib/invites/rules";
+import { APP_HOME, safeNextPath } from "@/lib/invites/rules";
 import { FormAlert } from "./FormAlert";
 import { ForgotPasswordButton, ForgotPasswordNote } from "./ForgotPasswordHint";
 import { GoogleButton } from "./GoogleButton";
@@ -19,7 +19,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const searchParams = useSearchParams();
   const callbackError = searchParams.get("error");
   // e.g. back to a workspace invite after signing in.
-  const next = safeNextPath(searchParams.get("next")) ?? "/";
+  const next = safeNextPath(searchParams.get("next")) ?? APP_HOME;
   const [error, setError] = useState<string | null>(
     callbackError ? authErrorMessage(callbackError) : null,
   );

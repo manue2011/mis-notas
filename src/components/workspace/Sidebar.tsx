@@ -21,7 +21,10 @@ type Props = {
 export function Sidebar({ access, workspaces, pages, user }: Props) {
   return (
     <div className="flex h-full flex-col gap-7 px-4 py-6">
-      <Logo className="hidden px-2 md:inline-flex" />
+      {/* On mobile the logo lives in the top bar instead. */}
+      <div className="hidden px-2 md:block">
+        <Logo />
+      </div>
       <SidebarSection title="Espacios de trabajo">
         <WorkspaceNav workspaces={workspaces} currentSlug={access.slug} />
       </SidebarSection>
