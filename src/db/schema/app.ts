@@ -60,6 +60,24 @@ export const inviteLink = pgTable(
   ],
 );
 
+// App-wide, single-use links that let someone create an account. Only the
+// superadmin creates them; sign-up is closed otherwise.
+export const signupInvite = pgTable(
+  "signup_invite",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tokenHash: text("token_hash").notNull(),
+    note: text("note"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    usedBy: text("used_by").references(() => user.id, { onDelete: "set null" }),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("signup_invite_token_hash_idx").on(t.tokenHash)],
+);
+
 export const page = pgTable(
   "page",
   {

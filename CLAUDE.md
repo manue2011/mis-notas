@@ -4,22 +4,24 @@
 
 ## Qué es
 
-Una app web tipo Notion para equipos pequeños. Cada persona se registra, crea
-espacios de trabajo e invita a sus compañeros con un enlace. Dentro de cada
-espacio se crean páginas con texto, listas, pantallazos, notas y código, y
-varias personas pueden editarlas. Debe poder funcionar entera con planes
-gratuitos (Vercel, Neon, Cloudinary, Render, Resend).
+Una app web tipo Notion para equipos pequeños. El registro es solo por
+invitación: el superadmin crea enlaces de registro y gestiona las cuentas.
+Cada persona con cuenta crea espacios de trabajo y añade a sus compañeros con
+un enlace. Dentro de cada espacio se crean páginas con texto, listas,
+pantallazos, notas y código, y varias personas pueden editarlas. Debe poder
+funcionar entera con planes gratuitos (Vercel, Neon, Cloudinary, Render).
+La app no envía correos.
 
 ## Stack (no cambiar sin preguntarme)
 
 - **Framework:** Next.js (App Router) + TypeScript estricto + Tailwind CSS
 - **Base de datos:** Neon (Postgres) con Drizzle ORM y migraciones de Drizzle Kit
 - **Autenticación:** Better Auth
-  - Correo + contraseña con verificación de email obligatoria
-  - Recuperación de contraseña por email
-  - Login con Google
+  - Correo + contraseña, sin verificación por email
+  - Sin recuperación por email: el superadmin cambia la contraseña desde `/admin`
+  - Login con Google (se activa solo si están las claves `GOOGLE_*`)
+  - Plugin `admin` para el superadmin (rol global `superadmin`)
   - Plugin `organization` para los espacios de trabajo, miembros y roles
-- **Emails:** Resend (verificación, recuperar contraseña, invitaciones)
 - **Editor:** BlockNote
 - **Imágenes:** Cloudinary con subidas firmadas desde el servidor
 - **Animaciones:** Motion (antes Framer Motion)
@@ -28,7 +30,14 @@ gratuitos (Vercel, Neon, Cloudinary, Render, Resend).
 
 ## Conceptos
 
-- **Usuario:** persona con cuenta verificada.
+- **Usuario:** persona con cuenta. Solo se crea con un enlace de registro.
+- **Superadmin:** el dueño de la app. Es un usuario normal (tiene sus espacios)
+  con acceso a `/admin`: crear y anular enlaces de registro, ver usuarios,
+  cambiar contraseñas y bloquear cuentas. No ve los espacios de los demás si no
+  es miembro. Su cuenta se crea (o se recupera) con `npm run admin:create`.
+- **Enlace de registro:** de un solo uso, caduca en 7 días, lo crea solo el
+  superadmin. `/invitacion/<token>` guarda el token en una cookie httpOnly y
+  lleva a `/registro`.
 - **Espacio de trabajo:** una organización de Better Auth. Tiene nombre, icono,
   color de acento, tipografía elegida y, opcionalmente, un dominio de correo
   permitido (por ejemplo `empresa.com`).
@@ -48,6 +57,10 @@ verification, organization, member, invitation):
   icon, allowedEmailDomain (nullable)
 - `invite_link`: id, organizationId, tokenHash, role, expiresAt, maxUses, uses,
   createdBy, revokedAt, createdAt
+- `signup_invite`: id, tokenHash, note, expiresAt, usedAt, usedBy, createdBy,
+  revokedAt, createdAt (enlaces de registro a la app)
+- El plugin `admin` añade `role`, `banned`, `banReason`, `banExpires` a `user`
+  e `impersonatedBy` a `session`.
 - `page`: id, organizationId, parentId (nullable), title, icon, coverUrl,
   content (jsonb), position, createdBy, updatedBy, createdAt, updatedAt,
   deletedAt (papelera, borrado suave)
@@ -59,15 +72,18 @@ es una tabla propia para enlaces compartibles.
 
 ## Reglas de autenticación y seguridad
 
-- Una cuenta no puede entrar hasta verificar su correo.
-- Bloquear correos temporales con una lista de dominios desechables.
-- Recuperar contraseña: el enlace caduca en 1 hora y es de un solo uso.
-- Al pedir recuperación, responder siempre igual: "Si el correo está
-  registrado, te hemos enviado un enlace". Nunca revelar si un correo existe.
-- Limitar intentos de login, registro, recuperación y reenvío de verificación
-  (rate limit de Better Auth).
+- Registro solo con enlace de registro válido, también con Google. Se comprueba
+  en el servidor (`user.validateUserInfo`) y el enlace se marca como usado de
+  forma atómica.
+- Como los correos no se verifican, Google no se vincula a una cuenta creada
+  con contraseña.
+- Login y registro pasan por `/api/auth` (no por Server Actions) para que
+  aplique el rate limit de Better Auth.
+- Al cambiar la contraseña de alguien o bloquearlo, se cierran sus sesiones.
+- `/admin` y sus acciones comprueban el rol `superadmin` en el servidor; a los
+  demás les da 404.
 - Contraseñas de mínimo 8 caracteres.
-- Guardar solo el hash del token de invitación, nunca el token en claro.
+- Guardar solo el hash de los tokens de invitación y de registro, nunca en claro.
 - Al aceptar una invitación: comprobar caducidad, usos y revocación, y si el
   espacio tiene `allowedEmailDomain`, que el correo del usuario coincida.
 - **Toda** consulta o mutación de páginas, recursos o ajustes comprueba que el
@@ -88,8 +104,6 @@ BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-RESEND_API_KEY=
-EMAIL_FROM=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
@@ -170,24 +184,24 @@ grafito `#3A342D`. Todos permiten texto blanco encima.
 
 ### Pantallas
 
-1. **Iniciar sesión:** Google, correo y contraseña (con botón para mostrarla),
-   enlace "¿La has olvidado?". A la derecha, panel decorativo con pantallazo
-   pegado y nota adhesiva.
-2. **Crear cuenta:** si viene de una invitación, muestra quién invita y a qué
-   espacio. Valida el correo mientras se escribe (formato y correos temporales).
-3. **Olvidé mi contraseña:** pide el correo y muestra el mensaje neutro.
-4. **Nueva contraseña:** a la que llega el enlace del email.
-5. **Confirma tu correo:** cuenta pendiente, botón de reenviar con espera.
-6. **Pantalla principal:** barra lateral (logo, espacios, selector de color,
+1. **Iniciar sesión** (`/iniciar-sesion`): Google, correo y contraseña (con
+   botón para mostrarla), "¿La has olvidado?" muestra "Pídele al administrador
+   que te la cambie". A la derecha, panel decorativo con pantallazo pegado y
+   nota adhesiva.
+2. **Crear cuenta** (`/registro`): solo con un enlace de registro válido; si no,
+   un mensaje explicándolo. Valida el formato del correo mientras se escribe.
+3. **Administración** (`/admin`, solo superadmin): crear enlaces de registro,
+   enlaces pendientes, personas (cambiar contraseña, bloquear).
+4. **Pantalla principal:** barra lateral (logo, espacios, selector de color,
    buscador Ctrl K, páginas, tarjeta "Copiar enlace de invitación") y la página
    abierta con barra superior (ruta, avatares de quién está, botón Compartir).
-7. **Ajustes del espacio:** nombre, icono, color, tipografía, dominio
+5. **Ajustes del espacio:** nombre, icono, color, tipografía, dominio
    permitido, miembros y roles, enlaces de invitación.
 
 ## Fases
 
-1. **Base:** proyecto, base de datos, autenticación completa (verificación,
-   recuperación, Google), crear espacios, enlaces de invitación, crear, editar y
+1. **Base:** proyecto, base de datos, autenticación (registro por invitación,
+   superadmin y `/admin`, Google), crear espacios, enlaces de invitación, crear, editar y
    borrar páginas con BlockNote e imágenes en Cloudinary, color de acento y el
    sistema de diseño. Permisos por rol aplicados en el servidor desde ya.
 2. **Organización:** páginas anidadas, arrastrar en la barra lateral, paleta

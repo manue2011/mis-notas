@@ -1,0 +1,26 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { authClient } from "@/lib/auth/client";
+
+export function SignOutButton() {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  async function signOut() {
+    setPending(true);
+    await authClient.signOut();
+    router.replace("/iniciar-sesion");
+    router.refresh();
+  }
+
+  return (
+    <Button variant="ghost" pending={pending} onClick={signOut}>
+      <LogOut size={16} strokeWidth={1.75} aria-hidden />
+      Cerrar sesión
+    </Button>
+  );
+}

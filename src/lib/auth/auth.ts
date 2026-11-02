@@ -1,18 +1,19 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { after } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { workspaceSettings } from "@/db/schema";
-import { sendEmail } from "@/lib/email/send";
-import { resetPasswordTemplate } from "@/lib/email/templates/reset-password";
-import { verifyEmailTemplate } from "@/lib/email/templates/verify-email";
 import { env } from "@/lib/env";
+import { adminAccess, appRoles, SUPERADMIN_ROLE } from "./admin-permissions";
 import { ac, roles } from "./permissions";
+import { validateUserInfo } from "./signup-gate";
+import { recordSignupInviteUser, SIGNUP_COOKIE } from "./signup-invite";
 
-const ONE_HOUR = 60 * 60;
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env();
 
 export const auth = betterAuth({
   appName: "Libreta",
@@ -20,38 +21,41 @@ export const auth = betterAuth({
   secret: env().BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "pg", schema }),
 
+  // No emails are sent: sign-up is invite-only and the superadmin resets
+  // forgotten passwords from /admin.
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
     minPasswordLength: 8,
-    resetPasswordTokenExpiresIn: ONE_HOUR,
-    revokeSessionsOnPasswordReset: true,
-    // Sent after the response so response time doesn't reveal whether the email exists.
-    sendResetPassword: async ({ user, url }) => {
-      after(() => sendEmail(user.email, resetPasswordTemplate(user.name, url)));
-    },
   },
 
-  emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
-    expiresIn: 24 * ONE_HOUR,
-    sendVerificationEmail: async ({ user, url }) => {
-      after(() => sendEmail(user.email, verifyEmailTemplate(user.name, url)));
-    },
-  },
-
-  socialProviders: {
-    google: {
-      clientId: env().GOOGLE_CLIENT_ID,
-      clientSecret: env().GOOGLE_CLIENT_SECRET,
-      prompt: "select_account",
-    },
-  },
+  socialProviders:
+    GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: GOOGLE_CLIENT_ID,
+            clientSecret: GOOGLE_CLIENT_SECRET,
+            prompt: "select_account",
+          },
+        }
+      : {},
 
   account: {
     accountLinking: { enabled: true, trustedProviders: ["google"] },
+  },
+
+  user: { validateUserInfo },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user, ctx) => {
+          const token = ctx?.getCookie(SIGNUP_COOKIE);
+          if (!token) return;
+          await recordSignupInviteUser(token, user.id);
+          ctx?.setCookie(SIGNUP_COOKIE, "", { path: "/", maxAge: 0 });
+        },
+      },
+    },
   },
 
   rateLimit: {
@@ -60,8 +64,6 @@ export const auth = betterAuth({
     customRules: {
       "/sign-in/email": { window: 60, max: 5 },
       "/sign-up/email": { window: 10 * 60, max: 5 },
-      "/request-password-reset": { window: 10 * 60, max: 3 },
-      "/send-verification-email": { window: 5 * 60, max: 3 },
     },
   },
 
@@ -70,6 +72,13 @@ export const auth = betterAuth({
   },
 
   plugins: [
+    admin({
+      ac: adminAccess,
+      roles: appRoles,
+      adminRoles: [SUPERADMIN_ROLE],
+      defaultRole: "user",
+      bannedUserMessage: "Tu cuenta está bloqueada. Habla con el administrador.",
+    }),
     organization({
       ac,
       roles,
