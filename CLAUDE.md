@@ -155,7 +155,9 @@ algún contraste no llega a 4.5:1.
 
 Cada espacio elige un acento de esta paleta: azul tinta `#2F5D8A`, teja
 `#B5432E`, musgo `#4E6E2F`, mostaza tostada `#8F5A0B`, ciruela `#6B4C8A`,
-grafito `#3A342D`. Todos permiten texto blanco encima.
+grafito `#3A342D`, frambuesa `#A8396A`, verde bosque `#2D6A4F`, petróleo
+`#1D6A72`, granate `#8C2F39`, calabaza `#A84A14`, índigo `#4B4FA0`. Todos
+permiten texto blanco encima (contraste ≥ 4.5:1).
 
 - Se aplica con variables CSS (`--accent`, `--accent-soft`, `--accent-tape`)
   en el contenedor del espacio.

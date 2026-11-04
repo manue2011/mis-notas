@@ -21,6 +21,12 @@ export const accentColor = pgEnum("accent_color", [
   "mustard",
   "plum",
   "graphite",
+  "raspberry",
+  "forest",
+  "petrol",
+  "garnet",
+  "pumpkin",
+  "indigo",
 ]);
 
 export const workspaceFont = pgEnum("workspace_font", ["serif", "sans", "mono"]);

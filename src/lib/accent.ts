@@ -5,6 +5,12 @@ export const ACCENTS = {
   mustard: { label: "Mostaza tostada", hex: "#8F5A0B" },
   plum: { label: "Ciruela", hex: "#6B4C8A" },
   graphite: { label: "Grafito", hex: "#3A342D" },
+  raspberry: { label: "Frambuesa", hex: "#A8396A" },
+  forest: { label: "Verde bosque", hex: "#2D6A4F" },
+  petrol: { label: "Petróleo", hex: "#1D6A72" },
+  garnet: { label: "Granate", hex: "#8C2F39" },
+  pumpkin: { label: "Calabaza", hex: "#A84A14" },
+  indigo: { label: "Índigo", hex: "#4B4FA0" },
 } as const;
 
 export type AccentKey = keyof typeof ACCENTS;

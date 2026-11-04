@@ -12,7 +12,7 @@ type Props = {
   className?: string;
 };
 
-/** The six workspace accents as a keyboard-friendly radio group. */
+/** The workspace accents as a keyboard-friendly radio group. */
 export function AccentSwatches({ value, onChange, label, disabled, className }: Props) {
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
