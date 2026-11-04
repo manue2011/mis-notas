@@ -4,8 +4,10 @@ import { z } from "zod";
 import { PageMenu } from "@/components/page/PageMenu";
 import { PageView } from "@/components/page/PageView";
 import { SubpageList } from "@/components/page/SubpageList";
+import { TrashedPageNotice } from "@/components/trash/TrashedPageNotice";
 import { TopBar } from "@/components/workspace/TopBar";
 import { getPage, listPages } from "@/lib/pages/queries";
+import { getTrashedPageTitle } from "@/lib/pages/trash";
 import { ancestorsOf, childrenOf, moveTargets, siblingMoves } from "@/lib/pages/tree";
 import { can } from "@/lib/workspace/access";
 
@@ -25,7 +27,22 @@ async function PageScreen({ params }: { params: Params }) {
 
   // listPages is the same (cached) query the sidebar uses.
   const [page, pages] = await Promise.all([getPage(slug, pageId), listPages(slug)]);
-  if (!page) notFound();
+  if (!page) {
+    // A link to a deleted page: say where it went rather than a bare 404.
+    const trashedTitle = await getTrashedPageTitle(slug, pageId);
+    if (trashedTitle === null) notFound();
+    return (
+      <>
+        <TopBar
+          crumbs={[
+            { label: "Papelera", href: `/espacio/${slug}/papelera` },
+            { label: trashedTitle || "Sin título" },
+          ]}
+        />
+        <TrashedPageNotice slug={slug} title={trashedTitle} />
+      </>
+    );
+  }
   const { access } = page;
   const base = `/espacio/${access.slug}`;
   const subpages = childrenOf(pages, page.id);

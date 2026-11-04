@@ -75,3 +75,17 @@ export async function destroyImage(publicId: string): Promise<void> {
   });
   await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, { method: "POST", body });
 }
+
+const DESTROY_BATCH = 100; // Admin API limit per call
+
+/** Deletes many images (missing ones are fine). Throws if Cloudinary refuses. */
+export async function destroyImages(publicIds: string[]): Promise<void> {
+  if (publicIds.length === 0) return;
+  const { base, headers } = adminAuth();
+  for (let i = 0; i < publicIds.length; i += DESTROY_BATCH) {
+    const query = new URLSearchParams();
+    for (const id of publicIds.slice(i, i + DESTROY_BATCH)) query.append("public_ids[]", id);
+    const res = await fetch(`${base}/resources/image/upload?${query}`, { method: "DELETE", headers });
+    if (!res.ok) throw new Error(`Cloudinary bulk delete failed: ${res.status}`);
+  }
+}

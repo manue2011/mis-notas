@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 import { cx } from "@/lib/cx";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
@@ -12,6 +12,8 @@ const variants: Record<Variant, string> = {
   primary: "bg-accent text-on-accent hover:brightness-110 active:brightness-95",
   secondary: "border border-border bg-surface text-ink hover:bg-panel",
   ghost: "text-ink hover:bg-panel",
+  /** A quiet destructive action; the confirmation step uses a solid button. */
+  danger: "text-error hover:bg-error/10",
 };
 
 export function buttonClasses(variant: Variant = "primary", className?: string) {

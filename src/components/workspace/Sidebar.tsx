@@ -1,4 +1,6 @@
 import { CommandPalette } from "@/components/palette/CommandPalette";
+import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import type { PageSummary } from "@/lib/pages/queries";
 import type { WorkspaceAccess } from "@/lib/workspace/access";
@@ -58,6 +60,13 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         {can(access.role, { page: ["create"] }) ? (
           <NewPageButton organizationId={access.organizationId} />
         ) : null}
+        <Link
+          href={`/espacio/${access.slug}/papelera`}
+          className="flex min-h-11 items-center gap-2 rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:bg-surface/70 hover:text-ink"
+        >
+          <Trash2 size={16} strokeWidth={1.5} aria-hidden />
+          Papelera
+        </Link>
       </SidebarSection>
       <div className="mt-auto flex flex-col gap-5">
         {can(access.role, { inviteLink: ["create"] }) ? (

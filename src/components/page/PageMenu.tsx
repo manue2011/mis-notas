@@ -93,8 +93,8 @@ export function PageMenu({ organizationId, pageId, hasSubpages, canDelete, move 
             <div className="flex flex-col gap-3 p-2">
               <p className="text-sm">
                 {hasSubpages
-                  ? "¿Borrar esta página y todas las que tiene dentro? Desaparecerán para todo el espacio."
-                  : "¿Borrar esta página? Desaparecerá para todo el espacio."}
+                  ? "¿Borrar esta página y todas las que tiene dentro? Irán a la papelera, de donde se pueden restaurar."
+                  : "¿Borrar esta página? Irá a la papelera, de donde se puede restaurar."}
               </p>
               <FormAlert message={error} />
               <div className="flex gap-2">

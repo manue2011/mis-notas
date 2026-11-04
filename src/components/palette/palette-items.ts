@@ -1,4 +1,4 @@
-import { FilePlus2, FileText, Search, type LucideIcon } from "lucide-react";
+import { FilePlus2, FileText, Search, Trash2, type LucideIcon } from "lucide-react";
 import type { SearchHit } from "@/lib/pages/search";
 import { foldText, searchTerms } from "@/lib/pages/search-terms";
 import { ancestorsOf, type FlatPage } from "@/lib/pages/tree";
@@ -31,6 +31,7 @@ type Input = {
 
 const MAX_PAGES = 8;
 const CREATE_WORDS = ["nueva", "pagina", "crear"];
+const TRASH_WORDS = ["papelera", "borradas"];
 
 const matchesAll = (text: string, terms: string[]) => {
   const folded = foldText(text);
@@ -79,6 +80,16 @@ export function buildPaletteItems({ query, slug, pages, workspaces, canCreate, r
   if (canCreate && (!terms.length || wantsCreate)) {
     items.push({ id: "create", group: "Acciones", label: "Nueva página", icon: FilePlus2, action: { kind: "createPage" } });
   }
+  const wantsTrash = terms.length > 0 && terms.every((t) => TRASH_WORDS.some((w) => w.startsWith(t)));
+  if (wantsTrash) {
+    items.push({
+      id: "trash",
+      group: "Acciones",
+      label: "Abrir la papelera",
+      icon: Trash2,
+      action: { kind: "go", href: `${base}/papelera` },
+    });
+  }
   if (terms.length) {
     items.push({
       id: "search",
@@ -102,7 +113,7 @@ export function buildPaletteItems({ query, slug, pages, workspaces, canCreate, r
 
   // Groups in a fixed order: actions first, unless it's a plain search.
   const order =
-    terms.length && !(canCreate && wantsCreate)
+    terms.length && !(canCreate && wantsCreate) && !wantsTrash
       ? ["Páginas", "Acciones", "Espacios"]
       : ["Acciones", "Páginas", "Espacios"];
   return items.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
