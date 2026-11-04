@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { LeaveWorkspaceButton } from "./LeaveWorkspaceButton";
 
 type Props = {
   name: string;
   email: string;
   superadmin: boolean;
+  workspace: { organizationId: string; name: string };
 };
 
-export function UserMenu({ name, email, superadmin }: Props) {
+export function UserMenu({ name, email, superadmin, workspace }: Props) {
   return (
     <div className="flex flex-col gap-1 border-t border-border pt-4">
       <div className="px-2 pb-1">
@@ -24,6 +26,7 @@ export function UserMenu({ name, email, superadmin }: Props) {
           Administración
         </Link>
       ) : null}
+      <LeaveWorkspaceButton key={workspace.organizationId} {...workspace} />
       <SignOutButton className="justify-start px-2" />
     </div>
   );

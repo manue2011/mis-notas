@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { GeneralSettingsForm } from "@/components/settings/GeneralSettingsForm";
+import { MembersList } from "@/components/settings/MembersList";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { TopBar } from "@/components/workspace/TopBar";
 import { WorkspaceAccentPicker } from "@/components/workspace/WorkspaceAccentPicker";
+import { listMembers } from "@/lib/members/queries";
 import { can, requireWorkspaceBySlug } from "@/lib/workspace/access";
 
 type Props = PageProps<"/espacio/[slug]/ajustes">;
@@ -22,6 +24,7 @@ async function SettingsScreen({ params }: Props) {
   const access = await requireWorkspaceBySlug(slug);
   // Only the workspace's admins; to everyone else the page doesn't exist.
   if (!can(access.role, { settings: ["update"] })) notFound();
+  const members = await listMembers(access.organizationId);
 
   return (
     <>
@@ -47,6 +50,23 @@ async function SettingsScreen({ params }: Props) {
                 <p className="text-sm text-ink-muted">Se guarda al momento, como en la barra lateral.</p>
               </div>
             </div>
+          </SettingsSection>
+          <SettingsSection
+            id="miembros"
+            title="Miembros"
+            description={
+              <>
+                Los <strong className="font-medium text-ink">lectores</strong> solo leen; los{" "}
+                <strong className="font-medium text-ink">editores</strong> crean, editan y borran páginas; los{" "}
+                <strong className="font-medium text-ink">administradores</strong>, además, llevan estos ajustes.
+              </>
+            }
+          >
+            <MembersList
+              organizationId={access.organizationId}
+              members={members}
+              currentUserId={access.userId}
+            />
           </SettingsSection>
         </div>
       </div>

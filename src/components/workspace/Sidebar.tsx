@@ -82,7 +82,7 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         {can(access.role, { inviteLink: ["create"] }) ? (
           <InviteTeamCard key={access.organizationId} organizationId={access.organizationId} />
         ) : null}
-        <UserMenu {...user} />
+        <UserMenu {...user} workspace={{ organizationId: access.organizationId, name: access.name }} />
       </div>
     </div>
   );
