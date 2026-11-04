@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Caveat, Instrument_Sans, Newsreader } from "next/font/google";
+import { themeScript } from "@/lib/theme";
 import "./globals.css";
 
 const newsreader = Newsreader({
@@ -29,7 +30,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="es"
       className={`${newsreader.variable} ${instrumentSans.variable} ${caveat.variable} h-full antialiased`}
+      // The theme script sets data-theme before React hydrates.
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );

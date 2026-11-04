@@ -65,7 +65,7 @@ export function MemberControls({ organizationId, memberId, name, role, isSelf }:
         <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 text-sm sm:max-w-xs">
           <p>¿Quitar a {name} del espacio? Dejará de ver sus páginas; lo que escribió se queda.</p>
           <div className="flex gap-2">
-            <Button pending={pending} onClick={remove} className="bg-error text-white" autoFocus>
+            <Button pending={pending} onClick={remove} className="bg-error text-on-error" autoFocus>
               {pending ? "Quitando…" : "Quitar"}
             </Button>
             <Button variant="ghost" disabled={pending} onClick={() => setConfirming(false)}>

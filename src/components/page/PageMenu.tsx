@@ -98,7 +98,7 @@ export function PageMenu({ organizationId, pageId, hasSubpages, canDelete, move 
               </p>
               <FormAlert message={error} />
               <div className="flex gap-2">
-                <Button pending={pending} onClick={remove} className="bg-error text-white">
+                <Button pending={pending} onClick={remove} className="bg-error text-on-error">
                   {pending ? "Borrando…" : "Borrar"}
                 </Button>
                 <Button variant="ghost" onClick={() => setView("menu")}>

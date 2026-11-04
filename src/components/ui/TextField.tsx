@@ -26,7 +26,7 @@ export function TextField({ label, hint, error, trailing, labelAside, className,
       <div
         className={cx(
           "flex items-center border-b-[1.5px] transition-colors duration-150",
-          "focus-within:border-accent",
+          "focus-within:border-accent-ink",
           error ? "border-error" : "border-field-line",
         )}
       >

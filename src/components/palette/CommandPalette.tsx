@@ -138,7 +138,7 @@ export function CommandPalette(props: Props) {
               aria-label="Paleta de comandos"
               onClose={reset}
               onClick={(e) => e.target === e.currentTarget && reset()}
-              className="mx-auto mt-[12vh] mb-auto w-[min(36rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-0 text-ink shadow-paper transition-[opacity,translate] duration-150 backdrop:bg-ink/25 starting:open:-translate-y-1 starting:open:opacity-0"
+              className="mx-auto mt-[12vh] mb-auto w-[min(36rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-0 text-ink shadow-paper transition-[opacity,translate] duration-150 backdrop:bg-[rgb(20_17_14/0.4)] starting:open:-translate-y-1 starting:open:opacity-0"
             >
               {open ? (
                 <div className="flex max-h-[70vh] flex-col">

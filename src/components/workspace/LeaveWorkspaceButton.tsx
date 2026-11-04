@@ -39,7 +39,7 @@ export function LeaveWorkspaceButton({ organizationId, name }: { organizationId:
       <p>¿Salir de «{name}»? Para volver necesitarás otra invitación.</p>
       <FormAlert message={error} />
       <div className="flex gap-2">
-        <Button pending={pending} onClick={leave} className="bg-error text-white" autoFocus>
+        <Button pending={pending} onClick={leave} className="bg-error text-on-error" autoFocus>
           {pending ? "Saliendo…" : "Salir"}
         </Button>
         <Button variant="ghost" disabled={pending} onClick={() => setConfirming(false)}>

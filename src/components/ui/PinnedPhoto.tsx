@@ -12,7 +12,7 @@ type Props = {
 export function PinnedPhoto({ children, caption, className }: Props) {
   return (
     <figure
-      className={cx("relative inline-block bg-white p-2 pb-3 shadow-paper", className)}
+      className={cx("light-island relative inline-block bg-photo p-2 pb-3 shadow-paper", className)}
       style={{ rotate: "-0.8deg" }}
     >
       <Tape className="-top-1 -left-6 w-16" rotate={-32} />

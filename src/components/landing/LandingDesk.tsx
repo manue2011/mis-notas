@@ -46,7 +46,7 @@ function Task({ done, children }: { done?: boolean; children: string }) {
         className={
           done
             ? "grid size-3.5 place-items-center rounded-[3px] bg-accent text-on-accent"
-            : "block size-3.5 rounded-[3px] border-[1.5px] border-accent"
+            : "block size-3.5 rounded-[3px] border-[1.5px] border-accent-ink"
         }
       >
         {done ? <Check size={10} strokeWidth={3} /> : null}

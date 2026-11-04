@@ -45,7 +45,7 @@ export function IconPicker({ name, accent, value, onChange }: Props) {
             onClick={() => onChange(key)}
             className={cx(
               "grid size-11 place-items-center rounded-lg border-2 transition-colors",
-              checked ? "border-accent" : "border-transparent hover:border-border",
+              checked ? "border-accent-ink" : "border-transparent hover:border-border",
             )}
           >
             {key ? (

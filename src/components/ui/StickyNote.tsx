@@ -12,7 +12,7 @@ export function StickyNote({ children, className, rotate = 1.5 }: Props) {
   return (
     <div
       className={cx(
-        "relative bg-sticky px-5 pt-6 pb-5 font-hand text-xl leading-snug text-ink shadow-paper",
+        "light-island relative bg-sticky px-5 pt-6 pb-5 font-hand text-xl leading-snug text-ink shadow-paper",
         className,
       )}
       style={{ rotate: `${rotate}deg` }}

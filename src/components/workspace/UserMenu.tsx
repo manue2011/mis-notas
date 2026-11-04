@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Settings } from "lucide-react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 import { LeaveWorkspaceButton } from "./LeaveWorkspaceButton";
 
 type Props = {
@@ -17,6 +18,7 @@ export function UserMenu({ name, email, superadmin, workspace }: Props) {
         <p className="truncate text-sm font-medium">{name}</p>
         <p className="truncate text-xs text-ink-muted">{email}</p>
       </div>
+      <ThemeSwitcher className="mb-1" />
       {superadmin ? (
         <Link
           href="/admin"

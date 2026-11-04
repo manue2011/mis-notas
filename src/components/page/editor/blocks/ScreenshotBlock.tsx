@@ -25,7 +25,7 @@ export const screenshotBlock = createReactBlockSpec(
       <figure className="screenshot-block my-6 flex w-full flex-col items-center">
         <div
           contentEditable={false}
-          className="relative max-w-full bg-white p-2.5 pb-3 shadow-paper"
+          className="light-island relative max-w-full bg-photo p-2.5 pb-3 shadow-paper"
           style={{ rotate: "-0.8deg" }}
         >
           <Tape className="-top-2 left-6 w-24" rotate={-4} />

@@ -41,7 +41,7 @@ async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">[
           {trashed > 0 ? (
             <p>
               No queda ninguna página a la vista: todo está en la{" "}
-              <Link href={`/espacio/${access.slug}/papelera`} className="text-accent underline underline-offset-4">
+              <Link href={`/espacio/${access.slug}/papelera`} className="text-accent-ink underline underline-offset-4">
                 papelera
               </Link>
               , por si hay algo que rescatar.

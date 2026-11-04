@@ -7,7 +7,10 @@
   initial-value: #2f5d8a;
 }
 
-:root {
+/* Light paper. Also used by .light-island (photos, sticky notes), which stay
+   paper-coloured in dark mode — keep the two lists in step. */
+:root,
+.light-island {
   --paper: #f5efe3;
   --panel: #ede5d4;
   --surface: #fbf8f1;
@@ -16,18 +19,78 @@
   --border: #dcd2bf;
   --rule: #e3d9c6;
   --field-line: #cfc4ae;
-  --sticky: #f2de8f;
   --error: #a33a26;
+  --on-error: #ffffff;
+}
+
+:root {
+  color-scheme: light;
+  --sticky: #f2de8f;
+  --photo: #ffffff;
+  --code-bg: #2a251f;
   --on-accent: #ffffff;
+  /* How much of the accent goes into text drawn in it (see .accent-scope). */
+  --accent-ink-share: 100%;
+  --accent-soft-share: 16%;
 
   --rule-gap: 1.75rem; /* distance between notebook lines */
   --shadow-paper: 0 1px 2px rgb(42 37 31 / 0.08), 0 6px 16px -6px rgb(42 37 31 / 0.18);
 }
 
-/* Applied on the workspace container. Derived tokens recompute from --accent. */
+/* Dark paper: for "Sistema" when the OS is dark, and for "Oscuro". The two
+   blocks must match. Contrast of every accent's ink checked ≥ 4.5:1. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #1e1a16;
+    --panel: #27221d;
+    --surface: #2f2923;
+    --ink: #ede5d4;
+    --ink-muted: #a89c8c;
+    --border: #3a332b;
+    --rule: #2c2620;
+    --field-line: #4a4137;
+    --error: #e5836b;
+    --on-error: #1e1a16;
+    --sticky: #d9c47a;
+    --photo: #ece6da;
+    --code-bg: #14110e;
+    --accent-ink-share: 50%;
+    --accent-soft-share: 24%;
+    --shadow-paper: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 16px -6px rgb(0 0 0 / 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1e1a16;
+  --panel: #27221d;
+  --surface: #2f2923;
+  --ink: #ede5d4;
+  --ink-muted: #a89c8c;
+  --border: #3a332b;
+  --rule: #2c2620;
+  --field-line: #4a4137;
+  --error: #e5836b;
+  --on-error: #1e1a16;
+  --sticky: #d9c47a;
+  --photo: #ece6da;
+  --code-bg: #14110e;
+  --accent-ink-share: 50%;
+  --accent-soft-share: 24%;
+  --shadow-paper: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 16px -6px rgb(0 0 0 / 0.6);
+}
+
+/* Tokens derived from --accent, recomputed wherever the accent changes.
+   --accent-ink is the accent for text and lines: lightened on dark paper. */
+:root,
 .accent-scope {
-  --accent-soft: color-mix(in oklch, var(--accent) 16%, var(--paper));
+  --accent-ink: color-mix(in oklch, var(--accent) var(--accent-ink-share), white);
+  --accent-soft: color-mix(in oklch, var(--accent-ink) var(--accent-soft-share), var(--paper));
   --accent-tape: color-mix(in oklch, var(--accent) 30%, transparent);
+}
+
+/* Applied on the workspace container. */
+.accent-scope {
   transition: --accent 450ms ease;
 }
 
@@ -42,7 +105,10 @@
   --color-field-line: var(--field-line);
   --color-sticky: var(--sticky);
   --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-photo: var(--photo);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-accent-tape: var(--accent-tape);
   --color-on-accent: var(--on-accent);
@@ -62,7 +128,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
 }
 

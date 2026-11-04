@@ -89,7 +89,7 @@
   width: 18px;
   height: 18px;
   margin-block: calc((var(--rule-gap) - 18px) / 2);
-  border: 1.5px solid var(--accent);
+  border: 1.5px solid var(--accent-ink);
   border-radius: 4px;
   background: var(--surface);
   transition: background-color 150ms;
@@ -110,7 +110,7 @@
 }
 
 .notebook-editor [data-content-type="checkListItem"] > div > input:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
 }
 
@@ -126,7 +126,7 @@
 .notebook-editor [data-content-type="codeBlock"] {
   margin-block: 0.75rem;
   border-radius: 8px;
-  background-color: var(--ink);
+  background-color: var(--code-bg);
   box-shadow: var(--shadow-paper);
   font-family: var(--font-mono);
   font-size: 0.875rem;
@@ -187,15 +187,15 @@
   display: inline-flex;
   align-items: baseline;
   gap: 0.25em;
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: underline;
-  text-decoration-color: color-mix(in oklch, var(--accent) 40%, transparent);
+  text-decoration-color: color-mix(in oklch, var(--accent-ink) 40%, transparent);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
   cursor: pointer;
 }
 .notebook-editor .page-link:hover {
-  text-decoration-color: var(--accent);
+  text-decoration-color: var(--accent-ink);
 }
 .notebook-editor .page-link svg {
   align-self: center;

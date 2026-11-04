@@ -11,7 +11,7 @@ type Props = {
 export function SearchField({ slug, defaultValue, autoFocus }: Props) {
   return (
     <Form action={`/espacio/${slug}/buscar`} role="search">
-      <label className="flex items-center gap-2 border-b-[1.5px] border-field-line transition-colors duration-150 focus-within:border-accent">
+      <label className="flex items-center gap-2 border-b-[1.5px] border-field-line transition-colors duration-150 focus-within:border-accent-ink">
         <Search size={20} strokeWidth={1.5} className="shrink-0 text-ink-muted" aria-hidden />
         <span className="sr-only">Buscar en este espacio</span>
         <input

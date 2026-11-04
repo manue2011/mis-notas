@@ -40,7 +40,7 @@ export function MoveToForm({ pageId, currentParentId, targets, pending, onMove, 
         autoFocus
         value={parent}
         onChange={(e) => setParent(e.target.value)}
-        className="min-h-11 w-full border-0 border-b border-field-line bg-transparent text-sm focus:border-accent focus:outline-none"
+        className="min-h-11 w-full border-0 border-b border-field-line bg-transparent text-sm focus:border-accent-ink focus:outline-none"
       >
         <option value={TOP_LEVEL}>Ninguna (primer nivel)</option>
         {targets.map((t) => (

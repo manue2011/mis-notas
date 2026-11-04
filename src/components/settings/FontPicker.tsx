@@ -44,7 +44,7 @@ export function FontPicker({ value, onChange }: Props) {
             onClick={() => onChange(key)}
             className={cx(
               "flex min-h-11 flex-col items-start gap-1 rounded-lg border-2 bg-surface px-4 py-3 text-left transition-colors",
-              checked ? "border-accent" : "border-border hover:border-field-line",
+              checked ? "border-accent-ink" : "border-border hover:border-field-line",
             )}
           >
             <span className="text-sm font-medium">{WORKSPACE_FONTS[key].label}</span>

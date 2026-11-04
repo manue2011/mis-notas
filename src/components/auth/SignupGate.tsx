@@ -19,7 +19,7 @@ export async function SignupGate({ googleEnabled }: { googleEnabled: boolean }) 
       <SignupForm googleEnabled={googleEnabled} />
       <AuthFootnote>
         ¿Ya tienes cuenta?{" "}
-        <Link href="/iniciar-sesion" className="font-medium text-accent underline underline-offset-4">
+        <Link href="/iniciar-sesion" className="font-medium text-accent-ink underline underline-offset-4">
           Entrar
         </Link>
       </AuthFootnote>

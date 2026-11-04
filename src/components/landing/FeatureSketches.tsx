@@ -17,7 +17,7 @@ export function PageSketch() {
         <span className="text-ink-muted line-through">Repasar la semana</span>
       </p>
       <p className="flex items-center gap-2">
-        <span className="block size-4 rounded-[4px] border-[1.5px] border-accent" />
+        <span className="block size-4 rounded-[4px] border-[1.5px] border-accent-ink" />
         Decidir la portada
       </p>
       <p className="mt-1 rounded bg-ink px-3 py-1 font-mono text-xs leading-6 text-[#e7d9b8]">
@@ -29,7 +29,7 @@ export function PageSketch() {
 
 export function ScreenshotSketch() {
   return (
-    <figure className="relative inline-block bg-white p-2 pb-2.5 shadow-paper" style={{ rotate: "-1.2deg" }}>
+    <figure className="light-island relative inline-block bg-photo p-2 pb-2.5 shadow-paper" style={{ rotate: "-1.2deg" }}>
       <Tape className="-top-2 left-4 w-16" rotate={-6} />
       <Tape className="-top-2 right-4 w-16" rotate={5} />
       <div className="flex h-28 w-60 gap-2 bg-[#f3f1ec] p-2">

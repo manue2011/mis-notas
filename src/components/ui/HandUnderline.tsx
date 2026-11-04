@@ -14,7 +14,7 @@ export function HandUnderline({
       aria-hidden
       viewBox="0 0 300 12"
       preserveAspectRatio="none"
-      className={cx("block h-2.5 text-accent", width, className)}
+      className={cx("block h-2.5 text-accent-ink", width, className)}
     >
       <path
         d="M2 8.5c38-3.2 81-5.4 126-5.1 52 .3 92 2.6 132 2.2 14-.1 27-.8 38-1.9"

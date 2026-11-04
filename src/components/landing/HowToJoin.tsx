@@ -15,7 +15,7 @@ export function HowToJoin() {
       <ol className="mt-12 grid gap-10 md:grid-cols-3">
         {steps.map((step, i) => (
           <li key={step.title} className="flex gap-4">
-            <span aria-hidden className="font-hand text-5xl leading-none text-accent">
+            <span aria-hidden className="font-hand text-5xl leading-none text-accent-ink">
               {i + 1}
             </span>
             <div>

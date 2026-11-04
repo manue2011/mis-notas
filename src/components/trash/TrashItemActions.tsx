@@ -36,7 +36,7 @@ export function TrashItemActions({ organizationId, pageId, subpages }: Props) {
           <Button
             pending={pending}
             onClick={() => run(deletePageForeverAction)}
-            className="bg-error text-white"
+            className="bg-error text-on-error"
             autoFocus
           >
             {pending ? "Borrando…" : "Sí, borrar para siempre"}

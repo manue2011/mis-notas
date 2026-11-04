@@ -9,7 +9,7 @@ export function ForgotPasswordButton({ open, onToggle }: { open: boolean; onTogg
       aria-expanded={open}
       aria-controls="forgot-password-hint"
       onClick={onToggle}
-      className="-my-3 min-h-11 text-sm text-accent underline underline-offset-4 hover:brightness-125"
+      className="-my-3 min-h-11 text-sm text-accent-ink underline underline-offset-4 hover:brightness-125"
     >
       ¿La has olvidado?
     </button>
