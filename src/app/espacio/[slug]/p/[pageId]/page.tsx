@@ -87,7 +87,9 @@ async function PageScreen({ params }: { params: Params }) {
         // Remount when switching pages so the editor starts from that page's content.
         key={page.id}
         organizationId={access.organizationId}
+        slug={access.slug}
         pageId={page.id}
+        pages={pages}
         title={page.title}
         content={page.content}
         updatedAt={page.updatedAt.toISOString()}

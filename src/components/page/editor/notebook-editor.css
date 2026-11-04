@@ -181,3 +181,28 @@
 .notebook-editor [data-content-type="quote"] blockquote {
   border-left-color: var(--field-line);
 }
+
+/* "@" links to other pages: ink in the accent, underlined by hand-ish. */
+.notebook-editor .page-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--accent) 40%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.notebook-editor .page-link:hover {
+  text-decoration-color: var(--accent);
+}
+.notebook-editor .page-link svg {
+  align-self: center;
+  flex-shrink: 0;
+}
+.notebook-editor .page-link--gone {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+  cursor: default;
+}

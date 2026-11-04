@@ -10,7 +10,10 @@ import { BlockNoteView } from "@blocknote/ariakit";
 import { syntaxHighlighter } from "@blocknote/code-block";
 import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { uploadImage, UploadError } from "@/lib/assets/upload-client";
+import type { FlatPage } from "@/lib/pages/tree";
 import { EditorContext, type PageEditorContext } from "./editor-context";
+import { PagePreviewLayer } from "./inline/PagePreviewLayer";
+import { mentionMenuItems } from "./mention-menu";
 import { pageDictionary, pageSchema, type PageBlock, type PageEditor } from "./schema";
 import { slashMenuItems } from "./slash-menu";
 import { uploadStore } from "./upload-store";
@@ -19,7 +22,10 @@ export type NotebookEditorHandle = { focus: () => void };
 
 type Props = {
   organizationId: string;
+  slug: string;
   pageId: string;
+  /** Live pages of the workspace, for "@" links. */
+  pages: FlatPage[];
   initialContent: unknown[];
   editable: boolean;
   onChange: (blocks: unknown[]) => void;
@@ -27,7 +33,8 @@ type Props = {
 };
 
 /** BlockNote dressed as a notebook page. Client-only; load it with next/dynamic. */
-export default function NotebookEditor({ organizationId, pageId, initialContent, editable, onChange, onReady }: Props) {
+export default function NotebookEditor(props: Props) {
+  const { organizationId, slug, pageId, pages, initialContent, editable, onChange, onReady } = props;
   const uploadRef = useRef<((blockId: string, file: File) => void) | null>(null);
   const editor: PageEditor = useCreateBlockNote({
     schema: pageSchema,
@@ -79,7 +86,10 @@ export default function NotebookEditor({ organizationId, pageId, initialContent,
     onReady?.({ focus: () => editor.focus() });
   }, [editor, onReady]);
 
-  const context = useMemo<PageEditorContext>(() => ({ editable, uploadInto }), [editable, uploadInto]);
+  const context = useMemo<PageEditorContext>(
+    () => ({ editable, uploadInto, organizationId, slug, pages }),
+    [editable, uploadInto, organizationId, slug, pages],
+  );
 
   return (
     <EditorContext value={context}>
@@ -95,7 +105,12 @@ export default function NotebookEditor({ organizationId, pageId, initialContent,
           triggerCharacter="/"
           getItems={async (query) => filterSuggestionItems(slashMenuItems(editor), query)}
         />
+        <SuggestionMenuController
+          triggerCharacter="@"
+          getItems={async (query) => mentionMenuItems(editor, pages, pageId, query)}
+        />
       </BlockNoteView>
+      <PagePreviewLayer organizationId={organizationId} pages={pages} />
     </EditorContext>
   );
 }

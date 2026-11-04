@@ -3,6 +3,7 @@
 import { useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { savePageContentAction, savePageTitleAction } from "@/lib/pages/actions";
+import type { FlatPage } from "@/lib/pages/tree";
 import type { NotebookEditorHandle } from "./editor/NotebookEditor";
 import { PageMeta } from "./PageMeta";
 import { PageTitle } from "./PageTitle";
@@ -16,7 +17,9 @@ const NotebookEditor = dynamic(() => import("./editor/NotebookEditor"), {
 
 type Props = {
   organizationId: string;
+  slug: string;
   pageId: string;
+  pages: FlatPage[];
   title: string;
   content: unknown[];
   updatedAt: string;
@@ -26,7 +29,8 @@ type Props = {
 
 const priority: SaveStatus[] = ["error", "saving", "pending", "saved", "idle"];
 
-export function PageView({ organizationId, pageId, title, content, updatedAt, updatedByName, editable }: Props) {
+export function PageView(props: Props) {
+  const { organizationId, slug, pageId, pages, title, content, updatedAt, updatedByName, editable } = props;
   const editorRef = useRef<NotebookEditorHandle | null>(null);
 
   const titleSave = useAutosave(
@@ -63,7 +67,9 @@ export function PageView({ organizationId, pageId, title, content, updatedAt, up
       <div className="mt-8">
         <NotebookEditor
           organizationId={organizationId}
+          slug={slug}
           pageId={pageId}
+          pages={pages}
           initialContent={content}
           editable={editable}
           onChange={contentSave.schedule}

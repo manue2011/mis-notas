@@ -1,8 +1,15 @@
-import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, type BlockNoteEditor } from "@blocknote/core";
+import {
+  BlockNoteSchema,
+  createCodeBlockSpec,
+  defaultBlockSpecs,
+  defaultInlineContentSpecs,
+  type BlockNoteEditor,
+} from "@blocknote/core";
 import { es } from "@blocknote/core/locales";
 import { codeBlockOptions } from "@blocknote/code-block";
 import { screenshotBlock } from "./blocks/ScreenshotBlock";
 import { stickyNoteBlock } from "./blocks/StickyNoteBlock";
+import { pageLinkInline } from "./inline/PageLinkInline";
 
 // Keep in sync with PAGE_BLOCK_TYPES in src/lib/pages/content.ts, which the
 // server validates against.
@@ -17,6 +24,10 @@ export const pageSchema = BlockNoteSchema.create({
     codeBlock: createCodeBlockSpec({ ...codeBlockOptions, defaultLanguage: "typescript" }),
     screenshot: screenshotBlock,
     stickyNote: stickyNoteBlock,
+  },
+  inlineContentSpecs: {
+    ...defaultInlineContentSpecs,
+    pageLink: pageLinkInline,
   },
 });
 
