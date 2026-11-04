@@ -15,24 +15,44 @@ export type PageActionResult = { ok: true; savedAt: string } | { ok: false; erro
 
 const idsSchema = z.object({ organizationId: z.string().min(1), pageId: z.uuid() });
 
-export async function createPageAction(organizationId: string): Promise<{ error: string } | void> {
-  const id = z.string().min(1).safeParse(organizationId);
-  if (!id.success) return { error: "Espacio no válido." };
+export async function createPageAction(
+  organizationId: string,
+  parentId: string | null = null,
+): Promise<{ error: string } | void> {
+  const input = z
+    .object({ organizationId: z.string().min(1), parentId: z.uuid().nullable() })
+    .safeParse({ organizationId, parentId });
+  if (!input.success) return { error: "Espacio no válido." };
 
   let access: WorkspaceAccess;
   try {
-    access = await requireWorkspaceById(id.data, { page: ["create"] });
+    access = await requireWorkspaceById(input.data.organizationId, { page: ["create"] });
   } catch (error) {
     if (error instanceof WorkspaceForbiddenError) return { error: error.message };
     throw error;
   }
 
-  // New pages go to the end of the list.
+  const parent = input.data.parentId;
+  if (parent) {
+    const [row] = await db
+      .select({ id: page.id })
+      .from(page)
+      .where(and(eq(page.id, parent), eq(page.organizationId, access.organizationId), isNull(page.deletedAt)))
+      .limit(1);
+    if (!row) return { error: "La página de arriba ya no existe." };
+  }
+
+  // New pages go to the end of their siblings.
+  const siblings = and(
+    eq(page.organizationId, access.organizationId),
+    parent ? eq(page.parentId, parent) : isNull(page.parentId),
+  );
   const [created] = await db
     .insert(page)
     .values({
       organizationId: access.organizationId,
-      position: sql`coalesce((select max(${page.position}) from ${page} where ${page.organizationId} = ${access.organizationId}), 0) + 1`,
+      parentId: parent,
+      position: sql`coalesce((select max(${page.position}) from ${page} where ${siblings}), 0) + 1`,
       createdBy: access.userId,
       updatedBy: access.userId,
     })
@@ -78,9 +98,35 @@ export async function deletePageAction(organizationId: string, pageId: string): 
   const ids = idsSchema.safeParse({ organizationId, pageId });
   if (!ids.success) return { error: "Página no válida." };
 
-  const result = await updatePage(ids.data, { page: ["delete"] }, { deletedAt: new Date() }, true);
-  if (!result.ok) return { error: result.error };
-  const access = await requireWorkspaceById(ids.data.organizationId);
+  let access: WorkspaceAccess;
+  try {
+    access = await requireWorkspaceById(ids.data.organizationId, { page: ["delete"] });
+  } catch (error) {
+    if (error instanceof WorkspaceForbiddenError) return { error: error.message };
+    throw error;
+  }
+
+  // The page and all its sub-pages go together, stamped with the same time so
+  // they can be restored together later.
+  const deletedAt = new Date();
+  const result = await db.execute(sql`
+    with recursive subtree as (
+      select ${page.id} as id from ${page}
+      where ${page.id} = ${ids.data.pageId}
+        and ${page.organizationId} = ${access.organizationId}
+        and ${page.deletedAt} is null
+      union all
+      select child.id from ${page} child
+      join subtree on child.parent_id = subtree.id
+      where child.deleted_at is null
+    )
+    update ${page}
+    set deleted_at = ${deletedAt}, updated_by = ${access.userId}, updated_at = ${deletedAt}
+    where ${page.id} in (select id from subtree)
+  `);
+  if (!result.rowCount) return { error: "Esta página ya no existe." };
+
+  revalidatePath(`/espacio/${access.slug}`, "layout");
   redirect(`/espacio/${access.slug}`);
 }
 

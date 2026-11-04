@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { deletePageAction } from "@/lib/pages/actions";
 
 /** "⋯" menu in the top bar. Deleting asks for confirmation inside the menu. */
-export function PageMenu({ organizationId, pageId }: { organizationId: string; pageId: string }) {
+type Props = { organizationId: string; pageId: string; hasSubpages: boolean };
+
+export function PageMenu({ organizationId, pageId, hasSubpages }: Props) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,11 @@ export function PageMenu({ organizationId, pageId }: { organizationId: string; p
         >
           {confirming ? (
             <div className="flex flex-col gap-3 p-2">
-              <p className="text-sm">¿Borrar esta página? Desaparecerá para todo el espacio.</p>
+              <p className="text-sm">
+                {hasSubpages
+                  ? "¿Borrar esta página y todas las que tiene dentro? Desaparecerán para todo el espacio."
+                  : "¿Borrar esta página? Desaparecerá para todo el espacio."}
+              </p>
               <FormAlert message={error} />
               <div className="flex gap-2">
                 <Button pending={pending} onClick={remove} className="bg-error text-white">

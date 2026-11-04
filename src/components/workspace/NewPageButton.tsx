@@ -9,11 +9,13 @@ import { createPageAction } from "@/lib/pages/actions";
 
 type Props = {
   organizationId: string;
+  /** Creates a sub-page of this page instead of a top-level one. */
+  parentId?: string;
   variant?: "sidebar" | "primary";
   label?: string;
 };
 
-export function NewPageButton({ organizationId, variant = "sidebar", label = "Nueva página" }: Props) {
+export function NewPageButton({ organizationId, parentId, variant = "sidebar", label = "Nueva página" }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +23,7 @@ export function NewPageButton({ organizationId, variant = "sidebar", label = "Nu
     setError(null);
     startTransition(async () => {
       // Redirects to the new page on success.
-      const result = await createPageAction(organizationId);
+      const result = await createPageAction(organizationId, parentId);
       if (result?.error) setError(result.error);
     });
   }

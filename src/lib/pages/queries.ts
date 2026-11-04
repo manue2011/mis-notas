@@ -11,11 +11,11 @@ export type PageDetail = NonNullable<Awaited<ReturnType<typeof getPage>>>;
 const live = (organizationId: string) =>
   and(eq(page.organizationId, organizationId), isNull(page.deletedAt));
 
-/** Pages of a workspace, for the sidebar. */
+/** Live pages of a workspace in tree order (flat; see `buildTree`). */
 export const listPages = cache(async (slug: string) => {
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
   return db
-    .select({ id: page.id, title: page.title })
+    .select({ id: page.id, title: page.title, parentId: page.parentId })
     .from(page)
     .where(live(access.organizationId))
     .orderBy(asc(page.position), asc(page.createdAt));

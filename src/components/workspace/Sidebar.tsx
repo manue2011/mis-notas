@@ -5,7 +5,7 @@ import { can } from "@/lib/workspace/access";
 import type { WorkspaceSummary } from "@/lib/workspace/queries";
 import { InviteTeamCard } from "./InviteTeamCard";
 import { NewPageButton } from "./NewPageButton";
-import { PageList } from "./PageList";
+import { PageTree } from "./page-tree/PageTree";
 import { SidebarSection } from "./SidebarSection";
 import { UserMenu } from "./UserMenu";
 import { WorkspaceAccentPicker } from "./WorkspaceAccentPicker";
@@ -38,7 +38,13 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         </SidebarSection>
       ) : null}
       <SidebarSection title="Páginas">
-        <PageList slug={access.slug} pages={pages} />
+        <PageTree
+          key={access.organizationId}
+          organizationId={access.organizationId}
+          slug={access.slug}
+          pages={pages}
+          canCreate={can(access.role, { page: ["create"] })}
+        />
         {can(access.role, { page: ["create"] }) ? (
           <NewPageButton organizationId={access.organizationId} />
         ) : null}
