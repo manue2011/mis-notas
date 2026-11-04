@@ -6,6 +6,9 @@ import { PageView } from "@/components/page/PageView";
 import { SubpageList } from "@/components/page/SubpageList";
 import { TrashedPageNotice } from "@/components/trash/TrashedPageNotice";
 import { TopBar } from "@/components/workspace/TopBar";
+import { requireUser } from "@/lib/auth/session";
+import { env, realtimeEnabled } from "@/lib/env";
+import { screenshotUrlPattern } from "@/lib/pages/content";
 import { getPage, listPages } from "@/lib/pages/queries";
 import { getTrashedPageTitle } from "@/lib/pages/trash";
 import { ancestorsOf, childrenOf, moveTargets, siblingMoves } from "@/lib/pages/tree";
@@ -48,6 +51,10 @@ async function PageScreen({ params }: { params: Params }) {
   const subpages = childrenOf(pages, page.id);
   const canDelete = can(access.role, { page: ["delete"] });
   const canMove = can(access.role, { page: ["update"] });
+  const user = await requireUser();
+  const realtime = realtimeEnabled()
+    ? { url: env().REALTIME_URL!, user: { id: user.id, name: user.name } }
+    : undefined;
 
   // Long paths keep the first and last ancestors: "Espacio / Manuales / … / Alta / Página".
   let ancestors: { label: string; href?: string }[] = ancestorsOf(pages, page.id).map((p) => ({
@@ -90,6 +97,8 @@ async function PageScreen({ params }: { params: Params }) {
         slug={access.slug}
         pageId={page.id}
         pages={pages}
+        ownImagePattern={screenshotUrlPattern(env().CLOUDINARY_CLOUD_NAME, access.organizationId)?.source ?? null}
+        realtime={realtime}
         title={page.title}
         content={page.content}
         updatedAt={page.updatedAt.toISOString()}

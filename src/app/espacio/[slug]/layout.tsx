@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import { AccentScope } from "@/components/ui/AccentScope";
+import { RealtimeWarmup } from "@/components/workspace/RealtimeWarmup";
 import { RememberWorkspace } from "@/components/workspace/RememberWorkspace";
 import { Sidebar } from "@/components/workspace/Sidebar";
 import { WorkspaceFrame } from "@/components/workspace/WorkspaceFrame";
 import { isSuperadmin, requireUser } from "@/lib/auth/session";
+import { env } from "@/lib/env";
 import { listPages } from "@/lib/pages/queries";
 import { requireWorkspaceBySlug } from "@/lib/workspace/access";
 import { listMyWorkspaces } from "@/lib/workspace/queries";
@@ -34,6 +36,7 @@ async function WorkspaceShell({
   return (
     <AccentScope accent={access.accent} font={access.font}>
       <RememberWorkspace organizationId={access.organizationId} />
+      {env().REALTIME_URL ? <RealtimeWarmup healthUrl={healthUrlOf(env().REALTIME_URL!)} /> : null}
       <WorkspaceFrame
         sidebar={
           <Sidebar
@@ -48,4 +51,12 @@ async function WorkspaceShell({
       </WorkspaceFrame>
     </AccentScope>
   );
+}
+
+/** wss://host/… → https://host/health (and ws → http locally). */
+function healthUrlOf(realtimeUrl: string): string {
+  const url = new URL(realtimeUrl);
+  url.protocol = url.protocol === "wss:" ? "https:" : "http:";
+  url.pathname = "/health";
+  return url.toString();
 }

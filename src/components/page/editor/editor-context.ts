@@ -11,6 +11,8 @@ export type PageEditorContext = {
   slug: string;
   /** Live pages of the workspace, for "@" links and their current titles. */
   pages: FlatPage[];
+  /** Screenshots whose url doesn't match aren't shown (someone else's images). */
+  ownImagePattern: RegExp | null;
 };
 
 export const EditorContext = createContext<PageEditorContext | null>(null);

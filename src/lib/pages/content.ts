@@ -42,7 +42,7 @@ const blockSchema: z.ZodType<Block> = z.lazy(() =>
  * configured Cloudinary account, inside the workspace's folder. An empty url
  * is a screenshot block still waiting for its image.
  */
-function screenshotUrlPattern(cloudName: string | undefined, organizationId: string): RegExp | null {
+export function screenshotUrlPattern(cloudName: string | undefined, organizationId: string): RegExp | null {
   if (!cloudName) return null;
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(

@@ -6,14 +6,17 @@ import { MAX_TITLE_LENGTH } from "@/lib/pages/content";
 
 type Props = {
   initialTitle: string;
+  /** Controlled value (real-time editing, where others change it too). */
+  value?: string;
   editable: boolean;
   onChange: (title: string) => void;
   /** Moves focus into the body, e.g. after pressing Enter in the title. */
   onEnter: () => void;
 };
 
-export function PageTitle({ initialTitle, editable, onChange, onEnter }: Props) {
-  const [title, setTitle] = useState(initialTitle);
+export function PageTitle({ initialTitle, value, editable, onChange, onEnter }: Props) {
+  const [local, setTitle] = useState(initialTitle);
+  const title = value ?? local;
   const ref = useRef<HTMLTextAreaElement>(null);
 
   // Grow with the text instead of scrolling.

@@ -7,6 +7,7 @@ import type { FlatPage } from "@/lib/pages/tree";
 import type { NotebookEditorHandle } from "./editor/NotebookEditor";
 import { PageMeta } from "./PageMeta";
 import { PageTitle } from "./PageTitle";
+import { RealtimePageView, type RealtimeConfig } from "./realtime/RealtimePageView";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 
 // ProseMirror needs the DOM, so the editor only renders in the browser.
@@ -20,6 +21,10 @@ type Props = {
   slug: string;
   pageId: string;
   pages: FlatPage[];
+  /** Source of the RegExp a screenshot's url must match to be shown. */
+  ownImagePattern: string | null;
+  /** Present when real-time editing is on; then the real-time server saves. */
+  realtime?: RealtimeConfig;
   title: string;
   content: unknown[];
   updatedAt: string;
@@ -30,7 +35,14 @@ type Props = {
 const priority: SaveStatus[] = ["error", "saving", "pending", "saved", "idle"];
 
 export function PageView(props: Props) {
-  const { organizationId, slug, pageId, pages, title, content, updatedAt, updatedByName, editable } = props;
+  if (props.realtime) return <RealtimePageView {...props} realtime={props.realtime} />;
+  return <SavedPageView {...props} />;
+}
+
+/** One person at a time: changes are saved over HTTP a moment after typing. */
+function SavedPageView(props: Props) {
+  const { organizationId, slug, pageId, pages, ownImagePattern, title, content, updatedAt, updatedByName, editable } =
+    props;
   const editorRef = useRef<NotebookEditorHandle | null>(null);
 
   const titleSave = useAutosave(
@@ -70,6 +82,7 @@ export function PageView(props: Props) {
           slug={slug}
           pageId={pageId}
           pages={pages}
+          ownImagePattern={ownImagePattern}
           initialContent={content}
           editable={editable}
           onChange={contentSave.schedule}

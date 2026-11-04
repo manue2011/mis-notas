@@ -23,15 +23,7 @@ export const screenshotBlock = createReactBlockSpec(
           <Tape className="-top-2 left-6 w-24" rotate={-4} />
           <Tape className="-top-2 right-6 w-24" rotate={3} />
           {block.props.url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Cloudinary already serves optimized WebP
-            <img
-              src={block.props.url}
-              alt=""
-              width={block.props.width || undefined}
-              height={block.props.height || undefined}
-              loading="lazy"
-              className="block h-auto max-h-[36rem] w-auto max-w-full"
-            />
+            <ScreenshotImage url={block.props.url} width={block.props.width} height={block.props.height} />
           ) : (
             <EmptyScreenshot blockId={block.id} />
           )}
@@ -45,6 +37,32 @@ export const screenshotBlock = createReactBlockSpec(
     ),
   },
 )();
+
+/**
+ * Only this workspace's own uploads are shown: with real-time editing a url
+ * reaches others before the server's checks run, so it's checked here too.
+ */
+function ScreenshotImage({ url, width, height }: { url: string; width: number; height: number }) {
+  const { ownImagePattern } = usePageEditor();
+  if (!ownImagePattern?.test(url)) {
+    return (
+      <div className="flex h-32 w-[28rem] max-w-full items-center justify-center bg-[#f3f1ec] px-8 text-center font-sans text-sm text-ink-muted">
+        Esta imagen no se subió a este espacio, así que no se muestra.
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- Cloudinary already serves optimized WebP
+    <img
+      src={url}
+      alt=""
+      width={width || undefined}
+      height={height || undefined}
+      loading="lazy"
+      className="block h-auto max-h-[36rem] w-auto max-w-full"
+    />
+  );
+}
 
 function EmptyScreenshot({ blockId }: { blockId: string }) {
   const { editable, uploadInto } = usePageEditor();

@@ -22,13 +22,15 @@ const statusText: Partial<Record<SaveStatus, string>> = {
 };
 
 type Props = {
+  /** Real-time editing: the connection's state, shown instead of `status`. */
+  liveStatus?: { text: string; tone?: "error" } | null;
   editorName: string | null;
   updatedAt: string;
   status: SaveStatus;
   error: string | null;
 };
 
-export function PageMeta({ editorName, updatedAt, status, error }: Props) {
+export function PageMeta({ liveStatus, editorName, updatedAt, status, error }: Props) {
   // Relative time depends on the clock, so it's only shown after hydration.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -44,9 +46,15 @@ export function PageMeta({ editorName, updatedAt, status, error }: Props) {
         Editado{editorName ? ` por ${editorName}` : ""}
         {now ? ` · ${timeAgo(updatedAt, now)}` : ""}
       </span>
-      <span aria-live="polite" className={status === "error" ? "text-error" : undefined}>
-        {status === "error" ? `· ${error}` : statusText[status] ? `· ${statusText[status]}` : ""}
-      </span>
+      {liveStatus !== undefined ? (
+        <span aria-live="polite" className={liveStatus?.tone === "error" ? "text-error" : undefined}>
+          {liveStatus ? `· ${liveStatus.text}` : ""}
+        </span>
+      ) : (
+        <span aria-live="polite" className={status === "error" ? "text-error" : undefined}>
+          {status === "error" ? `· ${error}` : statusText[status] ? `· ${statusText[status]}` : ""}
+        </span>
+      )}
     </p>
   );
 }
