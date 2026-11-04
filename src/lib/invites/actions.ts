@@ -7,21 +7,45 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { inviteLink, member, organization, workspaceSettings } from "@/db/schema";
+import { ROLE_NAMES } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { env } from "@/lib/env";
 import { hashToken, newToken, TOKEN_PATTERN } from "@/lib/tokens";
 import { requireWorkspaceById, WorkspaceForbiddenError } from "@/lib/workspace/access";
-import { emailMatchesDomain, INVITE_LINK_TTL_DAYS, inviteProblemText, linkProblem } from "./rules";
+import {
+  emailMatchesDomain,
+  INVITE_LINK_DAY_OPTIONS,
+  INVITE_LINK_TTL_DAYS,
+  inviteProblemText,
+  linkProblem,
+  MAX_INVITE_USES,
+} from "./rules";
 
 export type CreateLinkResult = { ok: true; url: string } | { ok: false; error: string };
 export type InviteActionResult = { ok: true; message: string } | { ok: false; error: string };
 
 const orgIdSchema = z.string().min(1);
 
-/** The sidebar card's link: editor role, 7 days, unlimited uses. */
-export async function createInviteLinkAction(organizationId: string): Promise<CreateLinkResult> {
+const linkOptionsSchema = z.object({
+  role: z.enum(ROLE_NAMES),
+  days: z.number().refine((d) => (INVITE_LINK_DAY_OPTIONS as readonly number[]).includes(d)),
+  maxUses: z.int().min(1).max(MAX_INVITE_USES).nullable(),
+});
+
+export type InviteLinkOptions = z.infer<typeof linkOptionsSchema>;
+
+/**
+ * A new invite link. Without options it's the sidebar card's: editor role,
+ * 7 days, unlimited uses. Only its hash is stored, so the URL is shown once.
+ */
+export async function createInviteLinkAction(
+  organizationId: string,
+  options: InviteLinkOptions = { role: "editor", days: INVITE_LINK_TTL_DAYS, maxUses: null },
+): Promise<CreateLinkResult> {
   const id = orgIdSchema.safeParse(organizationId);
+  const opts = linkOptionsSchema.safeParse(options);
   if (!id.success) return { ok: false, error: "Espacio no válido." };
+  if (!opts.success) return { ok: false, error: "Revisa las opciones del enlace." };
 
   try {
     const access = await requireWorkspaceById(id.data, { inviteLink: ["create"] });
@@ -29,12 +53,38 @@ export async function createInviteLinkAction(organizationId: string): Promise<Cr
     await db.insert(inviteLink).values({
       organizationId: access.organizationId,
       tokenHash: hashToken(token),
-      role: "editor",
-      expiresAt: new Date(Date.now() + INVITE_LINK_TTL_DAYS * 24 * 60 * 60 * 1000),
-      maxUses: null,
+      role: opts.data.role,
+      expiresAt: new Date(Date.now() + opts.data.days * 24 * 60 * 60 * 1000),
+      maxUses: opts.data.maxUses,
       createdBy: access.userId,
     });
+    revalidatePath(`/espacio/${access.slug}/ajustes`);
     return { ok: true, url: new URL(`/unirse/${token}`, env().BETTER_AUTH_URL).toString() };
+  } catch (error) {
+    if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message };
+    throw error;
+  }
+}
+
+export async function revokeInviteLinkAction(organizationId: string, linkId: string): Promise<InviteActionResult> {
+  const input = z.object({ organizationId: orgIdSchema, linkId: z.uuid() }).safeParse({ organizationId, linkId });
+  if (!input.success) return { ok: false, error: "Enlace no válido." };
+
+  try {
+    const access = await requireWorkspaceById(input.data.organizationId, { inviteLink: ["revoke"] });
+    const [revoked] = await db
+      .update(inviteLink)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(
+          eq(inviteLink.id, input.data.linkId),
+          eq(inviteLink.organizationId, access.organizationId),
+          isNull(inviteLink.revokedAt),
+        ),
+      )
+      .returning({ id: inviteLink.id });
+    revalidatePath(`/espacio/${access.slug}/ajustes`);
+    return revoked ? { ok: true, message: "Enlace anulado." } : { ok: false, error: "Ese enlace ya estaba anulado." };
   } catch (error) {
     if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message };
     throw error;
@@ -58,6 +108,7 @@ export async function revokeAllInviteLinksAction(organizationId: string): Promis
         ),
       )
       .returning({ id: inviteLink.id });
+    revalidatePath(`/espacio/${access.slug}/ajustes`);
     return {
       ok: true,
       message: revoked.length

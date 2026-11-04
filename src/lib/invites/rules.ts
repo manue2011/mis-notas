@@ -1,4 +1,6 @@
 export const INVITE_LINK_TTL_DAYS = 7;
+export const INVITE_LINK_DAY_OPTIONS = [1, 7, 30] as const;
+export const MAX_INVITE_USES = 1000;
 
 export type InviteProblem = "revoked" | "expired" | "used_up" | "domain";
 

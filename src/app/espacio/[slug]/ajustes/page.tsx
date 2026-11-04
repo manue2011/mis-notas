@@ -1,11 +1,14 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { ActiveInviteLinks } from "@/components/settings/ActiveInviteLinks";
 import { GeneralSettingsForm } from "@/components/settings/GeneralSettingsForm";
+import { InviteLinkCreator } from "@/components/settings/InviteLinkCreator";
 import { MembersList } from "@/components/settings/MembersList";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { TopBar } from "@/components/workspace/TopBar";
 import { WorkspaceAccentPicker } from "@/components/workspace/WorkspaceAccentPicker";
+import { listActiveInviteLinks } from "@/lib/invites/queries";
 import { listMembers } from "@/lib/members/queries";
 import { can, requireWorkspaceBySlug } from "@/lib/workspace/access";
 
@@ -24,7 +27,10 @@ async function SettingsScreen({ params }: Props) {
   const access = await requireWorkspaceBySlug(slug);
   // Only the workspace's admins; to everyone else the page doesn't exist.
   if (!can(access.role, { settings: ["update"] })) notFound();
-  const members = await listMembers(access.organizationId);
+  const [members, links] = await Promise.all([
+    listMembers(access.organizationId),
+    listActiveInviteLinks(access.organizationId),
+  ]);
 
   return (
     <>
@@ -67,6 +73,19 @@ async function SettingsScreen({ params }: Props) {
               members={members}
               currentUserId={access.userId}
             />
+          </SettingsSection>
+          <SettingsSection
+            id="invitaciones"
+            title="Invitaciones"
+            description="Enlaces para que tu equipo entre en el espacio. Quien no tenga cuenta en Libreta necesitará además un enlace de registro."
+          >
+            <div className="flex flex-col gap-8">
+              <InviteLinkCreator organizationId={access.organizationId} />
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-medium">Enlaces activos</h3>
+                <ActiveInviteLinks organizationId={access.organizationId} links={links} />
+              </div>
+            </div>
           </SettingsSection>
         </div>
       </div>

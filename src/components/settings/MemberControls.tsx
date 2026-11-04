@@ -4,12 +4,7 @@ import { useState, useTransition } from "react";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { Button } from "@/components/ui/Button";
 import { changeMemberRoleAction, removeMemberAction } from "@/lib/members/actions";
-
-export const ROLE_LABELS = {
-  admin: "Administrador",
-  editor: "Editor",
-  lector: "Lector",
-} as const;
+import { ROLE_LABELS } from "@/lib/members/roles";
 
 type Props = {
   organizationId: string;

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { inviteLink, member, organization, user, workspaceSettings } from "@/db/schema";
 import type { RoleName } from "@/lib/auth/permissions";
@@ -43,4 +43,32 @@ export async function isWorkspaceMember(organizationId: string, userId: string):
     .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId)))
     .limit(1);
   return Boolean(row);
+}
+
+/**
+ * Links that still work: not revoked, not expired, uses left. Callers must
+ * have checked the user may manage the workspace's invites.
+ */
+export async function listActiveInviteLinks(organizationId: string) {
+  return db
+    .select({
+      id: inviteLink.id,
+      role: inviteLink.role,
+      expiresAt: inviteLink.expiresAt,
+      maxUses: inviteLink.maxUses,
+      uses: inviteLink.uses,
+      createdAt: inviteLink.createdAt,
+      creatorName: user.name,
+    })
+    .from(inviteLink)
+    .leftJoin(user, eq(inviteLink.createdBy, user.id))
+    .where(
+      and(
+        eq(inviteLink.organizationId, organizationId),
+        isNull(inviteLink.revokedAt),
+        gt(inviteLink.expiresAt, sql`now()`),
+        or(isNull(inviteLink.maxUses), lt(inviteLink.uses, inviteLink.maxUses)),
+      ),
+    )
+    .orderBy(desc(inviteLink.createdAt));
 }
