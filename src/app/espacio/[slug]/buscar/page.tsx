@@ -42,7 +42,7 @@ async function SearchScreen({ params, searchParams }: Props) {
           <HandUnderline className="mt-1" />
         </h1>
         <div className="mt-8">
-          <SearchField slug={access.slug} defaultValue={query} variant="page" autoFocus={!query} />
+          <SearchField slug={access.slug} defaultValue={query} autoFocus={!query} />
         </div>
         {terms.length > 0 ? (
           <SearchResults slug={access.slug} hits={withPaths} terms={terms} query={query} />

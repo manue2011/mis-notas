@@ -29,7 +29,11 @@ const escapeLike = (term: string) => term.replace(/[\\%_]/g, "\\$&");
  * query, ignoring case and accents. Title matches first, then most recent.
  * Callers must have checked the user may read the workspace.
  */
-export async function searchPages(organizationId: string, query: string): Promise<SearchHit[]> {
+export async function searchPages(
+  organizationId: string,
+  query: string,
+  limit = MAX_RESULTS,
+): Promise<SearchHit[]> {
   const terms = searchTerms(query);
   if (terms.length === 0) return [];
 
@@ -64,7 +68,7 @@ export async function searchPages(organizationId: string, query: string): Promis
       ),
     )
     .orderBy(desc(titleMatch), desc(page.updatedAt))
-    .limit(MAX_RESULTS);
+    .limit(Math.min(limit, MAX_RESULTS));
 
   return rows.map(({ id, title, textLength, snippetStart, snippet }) => ({
     id,

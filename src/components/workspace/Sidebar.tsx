@@ -1,4 +1,4 @@
-import { SearchField } from "@/components/search/SearchField";
+import { CommandPalette } from "@/components/palette/CommandPalette";
 import { Logo } from "@/components/ui/Logo";
 import type { PageSummary } from "@/lib/pages/queries";
 import type { WorkspaceAccess } from "@/lib/workspace/access";
@@ -26,7 +26,14 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
       <div className="hidden px-2 md:block">
         <Logo />
       </div>
-      <SearchField slug={access.slug} />
+      <CommandPalette
+        key={access.organizationId}
+        organizationId={access.organizationId}
+        slug={access.slug}
+        pages={pages}
+        workspaces={workspaces}
+        canCreate={can(access.role, { page: ["create"] })}
+      />
       <SidebarSection title="Espacios de trabajo">
         <WorkspaceNav workspaces={workspaces} currentSlug={access.slug} />
       </SidebarSection>
