@@ -137,6 +137,8 @@ export const asset = pgTable(
     bytes: integer("bytes").notNull(),
     uploadedBy: text("uploaded_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // When no page showed it any more (see src/lib/assets/sweep.ts); null while in use.
+    orphanedAt: timestamp("orphaned_at", { withTimezone: true }),
   },
   (t) => [index("asset_page_idx").on(t.pageId)],
 );

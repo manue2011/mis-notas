@@ -29,6 +29,13 @@
       "when": 1793782223633,
       "tag": "0003_page_search",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793784538783,
+      "tag": "0004_asset_orphaned_at",
+      "breakpoints": true
     }
   ]
 }

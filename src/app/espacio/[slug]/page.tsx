@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { MarginNote } from "@/components/ui/MarginNote";
@@ -6,6 +7,7 @@ import { StickyNote } from "@/components/ui/StickyNote";
 import { NewPageButton } from "@/components/workspace/NewPageButton";
 import { TopBar } from "@/components/workspace/TopBar";
 import { getLastEditedPageId } from "@/lib/pages/queries";
+import { listTrash } from "@/lib/pages/trash";
 import { can, requireWorkspaceBySlug } from "@/lib/workspace/access";
 
 export default function WorkspacePage({ params }: PageProps<"/espacio/[slug]">) {
@@ -16,7 +18,8 @@ export default function WorkspacePage({ params }: PageProps<"/espacio/[slug]">) 
   );
 }
 
-// Opens the last edited page; with no pages yet, invites you to write the first.
+// Opens the last edited page; with no pages, invites you to write the first
+// (or points at the trash, if that's where they all went).
 async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">["params"] }) {
   const { slug } = await params;
   const access = await requireWorkspaceBySlug(slug);
@@ -24,6 +27,7 @@ async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">[
   if (lastPageId) redirect(`/espacio/${slug}/p/${lastPageId}`);
 
   const canCreate = can(access.role, { page: ["create"] });
+  const trashed = (await listTrash(slug)).length;
 
   return (
     <>
@@ -34,7 +38,17 @@ async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">[
           <HandUnderline className="mt-1" />
         </h1>
         <div className="ruled mt-10 max-w-xl font-serif text-lg">
-          <p>Este cuaderno está recién estrenado: ni una mancha de tinta todavía.</p>
+          {trashed > 0 ? (
+            <p>
+              No queda ninguna página a la vista: todo está en la{" "}
+              <Link href={`/espacio/${access.slug}/papelera`} className="text-accent underline underline-offset-4">
+                papelera
+              </Link>
+              , por si hay algo que rescatar.
+            </p>
+          ) : (
+            <p>Este cuaderno está recién estrenado: ni una mancha de tinta todavía.</p>
+          )}
           <p>
             {canCreate
               ? "Empieza por una página: unas notas, una lista, lo que tengas en la cabeza."

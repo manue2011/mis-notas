@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
+import { openPalette } from "@/components/palette/open-palette";
 import { Logo } from "@/components/ui/Logo";
 import { cx } from "@/lib/cx";
 
@@ -35,16 +36,27 @@ export function WorkspaceFrame({ sidebar, children }: Props) {
     <div className="flex min-h-screen flex-col md:flex-row">
       <div className="flex items-center justify-between border-b border-border bg-panel px-4 py-2 md:hidden">
         <Logo />
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls="workspace-sidebar"
-          aria-label={open ? "Cerrar menú" : "Abrir menú"}
-          onClick={() => setOpen((v) => !v)}
-          className="grid size-11 place-items-center rounded-md hover:bg-surface/70"
-        >
-          {open ? <X size={20} strokeWidth={1.5} aria-hidden /> : <Menu size={20} strokeWidth={1.5} aria-hidden />}
-        </button>
+        <div className="flex items-center">
+          <button
+            type="button"
+            aria-label="Buscar"
+            aria-haspopup="dialog"
+            onClick={openPalette}
+            className="grid size-11 place-items-center rounded-md hover:bg-surface/70"
+          >
+            <Search size={20} strokeWidth={1.5} aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls="workspace-sidebar"
+            aria-label={open ? "Cerrar menú" : "Abrir menú"}
+            onClick={() => setOpen((v) => !v)}
+            className="grid size-11 place-items-center rounded-md hover:bg-surface/70"
+          >
+            {open ? <X size={20} strokeWidth={1.5} aria-hidden /> : <Menu size={20} strokeWidth={1.5} aria-hidden />}
+          </button>
+        </div>
       </div>
 
       <aside

@@ -3,9 +3,11 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { page } from "@/db/schema";
+import { sweepPageAssets } from "@/lib/assets/sweep";
 import type { Permissions } from "@/lib/auth/permissions";
 import { env } from "@/lib/env";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
@@ -91,12 +93,21 @@ export async function savePageContentAction(
     return { ok: false, error: custom?.message ?? "El contenido no es válido." };
   }
 
-  return updatePage(
+  const result = await updatePage(
     ids.data,
     { page: ["update"] },
     { content: parsed.data, searchText: extractSearchText(parsed.data) },
     false,
   );
+  if (result.ok) {
+    // Tidy up images the page stopped showing, without slowing the save down.
+    after(() =>
+      sweepPageAssets(ids.data.organizationId, ids.data.pageId, parsed.data).catch((error) =>
+        console.error("[assets] sweep failed:", error instanceof Error ? error.message : error),
+      ),
+    );
+  }
+  return result;
 }
 
 export async function deletePageAction(organizationId: string, pageId: string): Promise<{ error: string } | void> {

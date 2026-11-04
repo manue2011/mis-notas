@@ -1,0 +1,1 @@
+ALTER TABLE "asset" ADD COLUMN "orphaned_at" timestamp with time zone;

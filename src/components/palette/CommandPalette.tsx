@@ -16,6 +16,7 @@ import { FormAlert } from "@/components/auth/FormAlert";
 import type { AccentKey } from "@/lib/accent";
 import { createPageAction } from "@/lib/pages/actions";
 import type { FlatPage } from "@/lib/pages/tree";
+import { OPEN_PALETTE_EVENT } from "./open-palette";
 import { buildPaletteItems, type PaletteItem } from "./palette-items";
 import { optionId, PaletteList } from "./PaletteList";
 import { PaletteTrigger } from "./PaletteTrigger";
@@ -63,8 +64,16 @@ export function CommandPalette(props: Props) {
         setOpen((v) => !v);
       }
     };
+    const onOpen = () => {
+      findHost();
+      setOpen(true);
+    };
     window.addEventListener("keydown", onKey, { capture: true });
-    return () => window.removeEventListener("keydown", onKey, { capture: true });
+    window.addEventListener(OPEN_PALETTE_EVENT, onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey, { capture: true });
+      window.removeEventListener(OPEN_PALETTE_EVENT, onOpen);
+    };
   }, []);
 
   useEffect(() => {
