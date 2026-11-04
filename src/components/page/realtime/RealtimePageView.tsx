@@ -100,7 +100,7 @@ export function RealtimePageView(props: Props) {
             collaboration={{
               fragment: live.doc.getXmlFragment(CONTENT_FRAGMENT),
               provider: live.provider,
-              user: { name: realtime.user.name, color: personColor(realtime.user.id) },
+              user: { id: realtime.user.id, name: realtime.user.name, color: personColor(realtime.user.id) },
             }}
           />
         ) : (

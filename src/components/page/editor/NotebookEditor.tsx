@@ -35,7 +35,8 @@ type Props = {
   collaboration?: {
     fragment: Y.XmlFragment;
     provider: HocuspocusProvider;
-    user: { name: string; color: string };
+    /** Shown to the others: cursor label and colour, avatar (by id). */
+    user: { id: string; name: string; color: string };
   };
   initialContent: unknown[];
   editable: boolean;

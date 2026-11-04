@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PageMenu } from "@/components/page/PageMenu";
 import { PageView } from "@/components/page/PageView";
+import { PresenceAvatars } from "@/components/page/realtime/PresenceAvatars";
 import { SubpageList } from "@/components/page/SubpageList";
 import { TrashedPageNotice } from "@/components/trash/TrashedPageNotice";
 import { TopBar } from "@/components/workspace/TopBar";
@@ -72,6 +73,7 @@ async function PageScreen({ params }: { params: Params }) {
           { label: page.title || "Sin título" },
         ]}
       >
+        {realtime ? <PresenceAvatars pageId={page.id} selfId={user.id} /> : null}
         {canDelete || canMove ? (
           <PageMenu
             organizationId={access.organizationId}
