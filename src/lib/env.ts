@@ -18,10 +18,18 @@ const envSchema = z
     CLOUDINARY_CLOUD_NAME: optional,
     CLOUDINARY_API_KEY: optional,
     CLOUDINARY_API_SECRET: optional,
+    // Real-time editing (Hocuspocus on Render) is on only when both are set.
+    // REALTIME_URL is the server's public wss:// address.
+    REALTIME_URL: z.url().optional(),
+    REALTIME_SECRET: z.string().min(32).optional(),
   })
   .refine((e) => !e.GOOGLE_CLIENT_ID === !e.GOOGLE_CLIENT_SECRET, {
     path: ["GOOGLE_CLIENT_SECRET"],
     message: "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together",
+  })
+  .refine((e) => !e.REALTIME_URL === !e.REALTIME_SECRET, {
+    path: ["REALTIME_SECRET"],
+    message: "REALTIME_URL and REALTIME_SECRET must be set together",
   });
 
 export type Env = z.infer<typeof envSchema>;
@@ -54,6 +62,10 @@ export function env(): Env {
 
 function isUrl(value: string | undefined): boolean {
   return z.url().safeParse(value).success;
+}
+
+export function realtimeEnabled(): boolean {
+  return Boolean(env().REALTIME_URL);
 }
 
 export function googleEnabled(): boolean {

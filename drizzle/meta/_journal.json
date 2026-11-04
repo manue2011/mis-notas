@@ -36,6 +36,13 @@
       "when": 1793784538783,
       "tag": "0004_asset_orphaned_at",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793790565700,
+      "tag": "0005_page_yjs_state",
+      "breakpoints": true
     }
   ]
 }

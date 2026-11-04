@@ -1,0 +1,1 @@
+ALTER TABLE "page" ADD COLUMN "yjs_state" "bytea";

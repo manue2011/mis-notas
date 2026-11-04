@@ -1,5 +1,6 @@
 import {
   type AnyPgColumn,
+  customType,
   doublePrecision,
   index,
   integer,
@@ -13,6 +14,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
+
+/** Raw bytes (Postgres bytea), for the Yjs document state. */
+const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
+  dataType: () => "bytea",
+  toDriver: (value) => Buffer.from(value),
+  fromDriver: (value) => new Uint8Array(value),
+});
 
 export const accentColor = pgEnum("accent_color", [
   "ink_blue",
@@ -100,6 +108,9 @@ export const page = pgTable(
     content: jsonb("content").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
     // Plain text of `content`, kept in step with it, for search.
     searchText: text("search_text").notNull().default(""),
+    // The live collaborative document (Yjs update). Null until the page is
+    // first opened with real-time editing; then `content` is derived from it.
+    yjsState: bytea("yjs_state"),
     position: doublePrecision("position").notNull().default(0),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),

@@ -21,6 +21,9 @@
     "@blocknote/code-block": "^0.57.0",
     "@blocknote/core": "^0.57.0",
     "@blocknote/react": "^0.57.0",
+    "@blocknote/server-util": "^0.57.0",
+    "@hocuspocus/provider": "^4.8.0",
+    "@hocuspocus/server": "^4.8.0",
     "@neondatabase/serverless": "^1.2.0",
     "better-auth": "^1.7.13",
     "drizzle-orm": "^0.45.4",
@@ -29,6 +32,7 @@
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "yjs": "^13.6.33",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -38,6 +42,7 @@
     "@types/react-dom": "^19",
     "auth": "^1.7.13",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
