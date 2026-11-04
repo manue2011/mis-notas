@@ -62,6 +62,29 @@ function screenshotsAreOwn(blocks: Block[], pattern: RegExp | null): boolean {
   });
 }
 
+/**
+ * The same rule as the validation below, applied by repair instead of
+ * rejection: screenshots that aren't this workspace's lose their image.
+ * Used where content arrives without a request to refuse (real-time edits).
+ */
+export function dropForeignScreenshots<T>(
+  blocks: T[],
+  input: { organizationId: string; cloudName: string | undefined },
+): T[] {
+  const pattern = screenshotUrlPattern(input.cloudName, input.organizationId);
+  const clean = (block: Block): Block => {
+    const url = block.props?.url;
+    const foreign =
+      block.type === "screenshot" && url !== undefined && url !== "" && (typeof url !== "string" || !pattern?.test(url));
+    return {
+      ...block,
+      ...(foreign ? { props: { ...block.props, url: "", assetId: "", width: 0, height: 0 } } : {}),
+      ...(block.children ? { children: block.children.map(clean) } : {}),
+    };
+  };
+  return (blocks as Block[]).map(clean) as T[];
+}
+
 export function pageContentSchema(input: { organizationId: string; cloudName: string | undefined }) {
   const pattern = screenshotUrlPattern(input.cloudName, input.organizationId);
   return z

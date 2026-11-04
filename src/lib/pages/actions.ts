@@ -73,7 +73,8 @@ export async function savePageTitleAction(
   const parsed = pageTitleSchema.safeParse(title);
   if (!ids.success || !parsed.success) return { ok: false, error: "El título no es válido." };
 
-  return updatePage(ids.data, { page: ["update"] }, { title: parsed.data }, true);
+  // yjsState: null — see savePageContentAction.
+  return updatePage(ids.data, { page: ["update"] }, { title: parsed.data, yjsState: null }, true);
 }
 
 export async function savePageContentAction(
@@ -96,7 +97,9 @@ export async function savePageContentAction(
   const result = await updatePage(
     ids.data,
     { page: ["update"] },
-    { content: parsed.data, searchText: extractSearchText(parsed.data) },
+    // A plain save (real-time editing off) makes the stored Yjs state stale;
+    // dropping it makes the real-time server rebuild from these blocks.
+    { content: parsed.data, searchText: extractSearchText(parsed.data), yjsState: null },
     false,
   );
   if (result.ok) {

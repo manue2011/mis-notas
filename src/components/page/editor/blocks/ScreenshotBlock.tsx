@@ -5,21 +5,13 @@ import { createReactBlockSpec } from "@blocknote/react";
 import { ImagePlus } from "lucide-react";
 import { Tape } from "@/components/ui/Tape";
 import { ACCEPTED_IMAGE_TYPES } from "@/lib/assets/upload-client";
+import { screenshotConfig } from "../block-configs";
 import { usePageEditor } from "../editor-context";
 import { useUploadState } from "../upload-store";
 
 /** A screenshot taped onto the page, with a handwritten caption (the block's text). */
 export const screenshotBlock = createReactBlockSpec(
-  {
-    type: "screenshot",
-    propSchema: {
-      url: { default: "" },
-      assetId: { default: "" },
-      width: { default: 0 },
-      height: { default: 0 },
-    },
-    content: "inline",
-  },
+  screenshotConfig,
   {
     render: ({ block, contentRef }) => (
       <figure className="screenshot-block my-6 flex w-full flex-col items-center">

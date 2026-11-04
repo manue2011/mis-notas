@@ -2,14 +2,11 @@
 
 import { createReactBlockSpec } from "@blocknote/react";
 import { StickyNote } from "@/components/ui/StickyNote";
+import { stickyNoteConfig } from "../block-configs";
 
 /** A yellow sticky note pinned in the accent color. Its text is the block's content. */
 export const stickyNoteBlock = createReactBlockSpec(
-  {
-    type: "stickyNote",
-    propSchema: {},
-    content: "inline",
-  },
+  stickyNoteConfig,
   {
     render: ({ contentRef }) => (
       <div className="sticky-note-block my-6 flex w-full justify-end pr-4">

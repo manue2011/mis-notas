@@ -9,10 +9,11 @@ import { es } from "@blocknote/core/locales";
 import { codeBlockOptions } from "@blocknote/code-block";
 import { screenshotBlock } from "./blocks/ScreenshotBlock";
 import { stickyNoteBlock } from "./blocks/StickyNoteBlock";
+import { CODE_BLOCK_DEFAULT_LANGUAGE } from "./block-configs";
 import { pageLinkInline } from "./inline/PageLinkInline";
 
 // Keep in sync with PAGE_BLOCK_TYPES in src/lib/pages/content.ts, which the
-// server validates against.
+// server validates against, and with realtime/schema.ts.
 export const pageSchema = BlockNoteSchema.create({
   blockSpecs: {
     paragraph: defaultBlockSpecs.paragraph,
@@ -21,7 +22,7 @@ export const pageSchema = BlockNoteSchema.create({
     numberedListItem: defaultBlockSpecs.numberedListItem,
     checkListItem: defaultBlockSpecs.checkListItem,
     quote: defaultBlockSpecs.quote,
-    codeBlock: createCodeBlockSpec({ ...codeBlockOptions, defaultLanguage: "typescript" }),
+    codeBlock: createCodeBlockSpec({ ...codeBlockOptions, defaultLanguage: CODE_BLOCK_DEFAULT_LANGUAGE }),
     screenshot: screenshotBlock,
     stickyNote: stickyNoteBlock,
   },

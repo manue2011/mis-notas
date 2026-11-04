@@ -1,6 +1,7 @@
 "use client";
 
 import { createReactInlineContentSpec } from "@blocknote/react";
+import { pageLinkConfig } from "../block-configs";
 import { PageLink } from "./PageLink";
 
 /**
@@ -9,14 +10,7 @@ import { PageLink } from "./PageLink";
  * shows the page's current title.
  */
 export const pageLinkInline = createReactInlineContentSpec(
-  {
-    type: "pageLink",
-    propSchema: {
-      pageId: { default: "" },
-      title: { default: "" },
-    },
-    content: "none",
-  },
+  pageLinkConfig,
   {
     render: ({ inlineContent }) => (
       <PageLink pageId={inlineContent.props.pageId} savedTitle={inlineContent.props.title} />

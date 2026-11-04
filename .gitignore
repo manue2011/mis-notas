@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Design references (local only)
 refencias/
+
+# real-time server bundle
+/realtime/dist
