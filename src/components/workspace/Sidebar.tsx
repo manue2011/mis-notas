@@ -44,6 +44,7 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
           slug={access.slug}
           pages={pages}
           canCreate={can(access.role, { page: ["create"] })}
+          canMove={can(access.role, { page: ["update"] })}
         />
         {can(access.role, { page: ["create"] }) ? (
           <NewPageButton organizationId={access.organizationId} />

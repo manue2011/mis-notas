@@ -6,7 +6,7 @@ import { PageView } from "@/components/page/PageView";
 import { SubpageList } from "@/components/page/SubpageList";
 import { TopBar } from "@/components/workspace/TopBar";
 import { getPage, listPages } from "@/lib/pages/queries";
-import { ancestorsOf, childrenOf } from "@/lib/pages/tree";
+import { ancestorsOf, childrenOf, moveTargets, siblingMoves } from "@/lib/pages/tree";
 import { can } from "@/lib/workspace/access";
 
 type Params = PageProps<"/espacio/[slug]/p/[pageId]">["params"];
@@ -29,6 +29,8 @@ async function PageScreen({ params }: { params: Params }) {
   const { access } = page;
   const base = `/espacio/${access.slug}`;
   const subpages = childrenOf(pages, page.id);
+  const canDelete = can(access.role, { page: ["delete"] });
+  const canMove = can(access.role, { page: ["update"] });
 
   // Long paths keep the first and last ancestors: "Espacio / Manuales / … / Alta / Página".
   let ancestors: { label: string; href?: string }[] = ancestorsOf(pages, page.id).map((p) => ({
@@ -46,11 +48,21 @@ async function PageScreen({ params }: { params: Params }) {
           { label: page.title || "Sin título" },
         ]}
       >
-        {can(access.role, { page: ["delete"] }) ? (
+        {canDelete || canMove ? (
           <PageMenu
             organizationId={access.organizationId}
             pageId={page.id}
             hasSubpages={subpages.length > 0}
+            canDelete={canDelete}
+            move={
+              canMove
+                ? {
+                    ...siblingMoves(pages, page.id),
+                    parentId: pages.find((p) => p.id === page.id)?.parentId ?? null,
+                    targets: moveTargets(pages, page.id),
+                  }
+                : undefined
+            }
           />
         ) : null}
       </TopBar>
@@ -63,7 +75,7 @@ async function PageScreen({ params }: { params: Params }) {
         content={page.content}
         updatedAt={page.updatedAt.toISOString()}
         updatedByName={page.updatedByName}
-        editable={can(access.role, { page: ["update"] })}
+        editable={canMove}
       />
       <SubpageList
         slug={access.slug}
