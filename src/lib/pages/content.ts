@@ -17,6 +17,7 @@ export const PAGE_BLOCK_TYPES = [
 
 export const MAX_CONTENT_BYTES = 1_000_000;
 export const MAX_TITLE_LENGTH = 200;
+const MAX_SEARCH_TEXT_LENGTH = 100_000;
 
 type Block = {
   id?: string;
@@ -75,3 +76,20 @@ export function pageContentSchema(input: { organizationId: string; cloudName: st
 }
 
 export const pageTitleSchema = z.string().trim().max(MAX_TITLE_LENGTH);
+
+/**
+ * The plain text of a page for search: every inline text node, in order.
+ * Same rule as the backfill in drizzle/0003_page_search.sql.
+ */
+export function extractSearchText(blocks: unknown): string {
+  const parts: string[] = [];
+  const walk = (node: unknown) => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (!node || typeof node !== "object") return;
+    const record = node as Record<string, unknown>;
+    if (record.type === "text" && typeof record.text === "string") parts.push(record.text);
+    for (const value of Object.values(record)) if (typeof value === "object") walk(value);
+  };
+  walk(blocks);
+  return parts.join(" ").slice(0, MAX_SEARCH_TEXT_LENGTH);
+}

@@ -9,7 +9,7 @@ import { page } from "@/db/schema";
 import type { Permissions } from "@/lib/auth/permissions";
 import { env } from "@/lib/env";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
-import { pageContentSchema, pageTitleSchema } from "./content";
+import { extractSearchText, pageContentSchema, pageTitleSchema } from "./content";
 
 export type PageActionResult = { ok: true; savedAt: string } | { ok: false; error: string };
 
@@ -91,7 +91,12 @@ export async function savePageContentAction(
     return { ok: false, error: custom?.message ?? "El contenido no es válido." };
   }
 
-  return updatePage(ids.data, { page: ["update"] }, { content: parsed.data }, false);
+  return updatePage(
+    ids.data,
+    { page: ["update"] },
+    { content: parsed.data, searchText: extractSearchText(parsed.data) },
+    false,
+  );
 }
 
 export async function deletePageAction(organizationId: string, pageId: string): Promise<{ error: string } | void> {

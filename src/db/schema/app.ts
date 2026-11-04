@@ -98,6 +98,8 @@ export const page = pgTable(
     icon: text("icon"),
     coverUrl: text("cover_url"),
     content: jsonb("content").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
+    // Plain text of `content`, kept in step with it, for search.
+    searchText: text("search_text").notNull().default(""),
     position: doublePrecision("position").notNull().default(0),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
@@ -109,6 +111,12 @@ export const page = pgTable(
     index("page_tree_idx")
       .on(t.organizationId, t.parentId, t.position)
       .where(sql`${t.deletedAt} is null`),
+    // Accent- and case-insensitive substring search (see src/lib/pages/search.ts).
+    // f_unaccent is an immutable wrapper around unaccent, created in migration 0003.
+    index("page_search_idx").using(
+      "gin",
+      sql`f_unaccent(lower(${t.title} || ' ' || ${t.searchText})) gin_trgm_ops`,
+    ),
   ],
 );
 
