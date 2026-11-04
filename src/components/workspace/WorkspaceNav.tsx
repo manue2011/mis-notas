@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { Monogram } from "@/components/ui/Monogram";
+import { WorkspaceMark } from "@/components/ui/WorkspaceMark";
 import { cx } from "@/lib/cx";
 import type { WorkspaceSummary } from "@/lib/workspace/queries";
 
@@ -25,7 +25,7 @@ export function WorkspaceNav({
               current ? "bg-accent-soft font-medium" : "hover:bg-surface/70",
             )}
           >
-            <Monogram name={w.name} accent={w.accent} />
+            <WorkspaceMark name={w.name} accent={w.accent} icon={w.icon} />
             <span className="truncate">{w.name}</span>
           </Link>
         );

@@ -1,4 +1,4 @@
-import { Monogram } from "@/components/ui/Monogram";
+import { WorkspaceMark } from "@/components/ui/WorkspaceMark";
 import { cx } from "@/lib/cx";
 import type { PaletteItem } from "./palette-items";
 
@@ -43,7 +43,7 @@ export function PaletteList({ id, items, activeIndex, onHover, onPick }: Props) 
               )}
             >
               {item.workspace ? (
-                <Monogram name={item.workspace.name} accent={item.workspace.accent} className="size-6 text-xs" />
+                <WorkspaceMark {...item.workspace} className="size-6 text-xs" />
               ) : Icon ? (
                 <Icon size={18} strokeWidth={1.5} className="shrink-0 text-ink-muted" aria-hidden />
               ) : null}

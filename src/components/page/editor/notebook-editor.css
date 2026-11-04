@@ -1,7 +1,7 @@
 /* BlockNote dressed in the notebook design tokens (see globals.css). */
 
 .notebook-editor.bn-container[data-color-scheme] {
-  --bn-font-family: var(--font-serif);
+  --bn-font-family: var(--font-notes, var(--font-serif));
   --bn-border-radius: 8px;
   --bn-colors-editor-background: transparent;
   --bn-colors-editor-text: var(--ink);
@@ -22,7 +22,7 @@
 
 /* BlockNote hard-codes Inter here (off-limits in this design). */
 .notebook-editor .bn-default-styles {
-  font-family: var(--font-serif);
+  font-family: var(--font-notes, var(--font-serif));
 }
 
 /* Menus and toolbars are interface, not notes. */

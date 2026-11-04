@@ -13,6 +13,8 @@ export type WorkspaceAccess = {
   slug: string;
   name: string;
   accent: AccentKey;
+  icon: string | null;
+  font: "serif" | "sans" | "mono";
   role: RoleName;
   userId: string;
 };
@@ -38,6 +40,8 @@ async function findAccess(userId: string, where: SQL): Promise<WorkspaceAccess |
       slug: organization.slug,
       name: organization.name,
       accent: workspaceSettings.accentColor,
+      icon: workspaceSettings.icon,
+      font: workspaceSettings.font,
       role: member.role,
     })
     .from(member)

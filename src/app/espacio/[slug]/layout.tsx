@@ -32,7 +32,7 @@ async function WorkspaceShell({
   ]);
 
   return (
-    <AccentScope accent={access.accent}>
+    <AccentScope accent={access.accent} font={access.font}>
       <RememberWorkspace organizationId={access.organizationId} />
       <WorkspaceFrame
         sidebar={

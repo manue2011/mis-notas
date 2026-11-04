@@ -16,6 +16,7 @@ export const listMyWorkspaces = cache(async () => {
       slug: organization.slug,
       name: organization.name,
       accent: workspaceSettings.accentColor,
+      icon: workspaceSettings.icon,
     })
     .from(member)
     .innerJoin(organization, eq(member.organizationId, organization.id))

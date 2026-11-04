@@ -6,11 +6,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { workspaceSettings } from "@/db/schema";
+import { organization, workspaceSettings } from "@/db/schema";
 import { ACCENT_KEYS } from "@/lib/accent";
 import { auth } from "@/lib/auth/auth";
 import { requireUser } from "@/lib/auth/session";
 import { requireWorkspaceById, WorkspaceForbiddenError } from "./access";
+import { WORKSPACE_FONT_KEYS, WORKSPACE_ICON_KEYS } from "./icons";
 import { workspaceSlug } from "./slug";
 
 export type WorkspaceActionResult = { ok: true } | { ok: false; error: string };
@@ -77,6 +78,42 @@ export async function setAccentAction(
       .update(workspaceSettings)
       .set({ accentColor: parsed.data.accent, updatedAt: new Date() })
       .where(eq(workspaceSettings.organizationId, access.organizationId));
+    revalidatePath(`/espacio/${access.slug}`, "layout");
+  });
+}
+
+const generalSchema = z.object({
+  organizationId: z.string().min(1),
+  name: createSchema.shape.name,
+  icon: z.enum(WORKSPACE_ICON_KEYS).nullable(),
+  font: z.enum(WORKSPACE_FONT_KEYS),
+});
+
+/** Name, icon and note typeface. The slug (and so every link) stays the same. */
+export async function updateWorkspaceGeneralAction(input: {
+  organizationId: string;
+  name: string;
+  icon: string | null;
+  font: string;
+}): Promise<WorkspaceActionResult> {
+  const parsed = generalSchema.safeParse(input);
+  if (!parsed.success) {
+    const nameIssue = parsed.error.issues.find((issue) => issue.path[0] === "name");
+    return { ok: false, error: nameIssue?.message ?? "Algún dato no es válido." };
+  }
+
+  return withWorkspaceErrors(async () => {
+    const access = await requireWorkspaceById(parsed.data.organizationId, { settings: ["update"] });
+    await db.transaction(async (tx) => {
+      await tx
+        .update(organization)
+        .set({ name: parsed.data.name })
+        .where(eq(organization.id, access.organizationId));
+      await tx
+        .update(workspaceSettings)
+        .set({ icon: parsed.data.icon, font: parsed.data.font, updatedAt: new Date() })
+        .where(eq(workspaceSettings.organizationId, access.organizationId));
+    });
     revalidatePath(`/espacio/${access.slug}`, "layout");
   });
 }

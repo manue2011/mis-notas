@@ -1,6 +1,6 @@
 import { CommandPalette } from "@/components/palette/CommandPalette";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Settings, Trash2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import type { PageSummary } from "@/lib/pages/queries";
 import type { WorkspaceAccess } from "@/lib/workspace/access";
@@ -35,6 +35,7 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         pages={pages}
         workspaces={workspaces}
         canCreate={can(access.role, { page: ["create"] })}
+        canManage={can(access.role, { settings: ["update"] })}
       />
       <SidebarSection title="Espacios de trabajo">
         <WorkspaceNav workspaces={workspaces} currentSlug={access.slug} />
@@ -69,6 +70,15 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         </Link>
       </SidebarSection>
       <div className="mt-auto flex flex-col gap-5">
+        {can(access.role, { settings: ["update"] }) ? (
+          <Link
+            href={`/espacio/${access.slug}/ajustes`}
+            className="flex min-h-11 items-center gap-2 rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:bg-surface/70 hover:text-ink"
+          >
+            <Settings size={16} strokeWidth={1.5} aria-hidden />
+            Ajustes del espacio
+          </Link>
+        ) : null}
         {can(access.role, { inviteLink: ["create"] }) ? (
           <InviteTeamCard key={access.organizationId} organizationId={access.organizationId} />
         ) : null}

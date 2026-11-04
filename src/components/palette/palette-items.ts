@@ -1,4 +1,4 @@
-import { FilePlus2, FileText, Search, Trash2, type LucideIcon } from "lucide-react";
+import { FilePlus2, FileText, Search, Settings, Trash2, type LucideIcon } from "lucide-react";
 import type { SearchHit } from "@/lib/pages/search";
 import { foldText, searchTerms } from "@/lib/pages/search-terms";
 import { ancestorsOf, type FlatPage } from "@/lib/pages/tree";
@@ -16,7 +16,7 @@ export type PaletteItem = {
   detail?: string;
   icon?: LucideIcon;
   /** Workspaces show their monogram instead of an icon. */
-  workspace?: { name: string; accent: AccentKey };
+  workspace?: { name: string; accent: AccentKey; icon: string | null };
   action: PaletteAction;
 };
 
@@ -24,21 +24,24 @@ type Input = {
   query: string;
   slug: string;
   pages: FlatPage[];
-  workspaces: { id: string; slug: string; name: string; accent: AccentKey }[];
+  workspaces: { id: string; slug: string; name: string; accent: AccentKey; icon: string | null }[];
   canCreate: boolean;
+  canManage: boolean;
   remoteHits: SearchHit[];
 };
 
 const MAX_PAGES = 8;
 const CREATE_WORDS = ["nueva", "pagina", "crear"];
 const TRASH_WORDS = ["papelera", "borradas"];
+const SETTINGS_WORDS = ["ajustes", "configuracion", "miembros", "invitaciones"];
 
 const matchesAll = (text: string, terms: string[]) => {
   const folded = foldText(text);
   return terms.every((term) => folded.includes(term));
 };
 
-export function buildPaletteItems({ query, slug, pages, workspaces, canCreate, remoteHits }: Input): PaletteItem[] {
+export function buildPaletteItems(input: Input): PaletteItem[] {
+  const { query, slug, pages, workspaces, canCreate, canManage, remoteHits } = input;
   const terms = searchTerms(query);
   const base = `/espacio/${slug}`;
   const pathOf = (id: string) =>
@@ -90,6 +93,17 @@ export function buildPaletteItems({ query, slug, pages, workspaces, canCreate, r
       action: { kind: "go", href: `${base}/papelera` },
     });
   }
+  const wantsSettings =
+    canManage && terms.length > 0 && terms.every((t) => SETTINGS_WORDS.some((w) => w.startsWith(t)));
+  if (wantsSettings) {
+    items.push({
+      id: "settings",
+      group: "Acciones",
+      label: "Ajustes del espacio",
+      icon: Settings,
+      action: { kind: "go", href: `${base}/ajustes` },
+    });
+  }
   if (terms.length) {
     items.push({
       id: "search",
@@ -106,14 +120,14 @@ export function buildPaletteItems({ query, slug, pages, workspaces, canCreate, r
       id: `workspace:${w.id}`,
       group: "Espacios",
       label: `Ir a ${w.name}`,
-      workspace: { name: w.name, accent: w.accent },
+      workspace: { name: w.name, accent: w.accent, icon: w.icon },
       action: { kind: "go", href: `/espacio/${w.slug}` },
     });
   }
 
   // Groups in a fixed order: actions first, unless it's a plain search.
   const order =
-    terms.length && !(canCreate && wantsCreate) && !wantsTrash
+    terms.length && !(canCreate && wantsCreate) && !wantsTrash && !wantsSettings
       ? ["Páginas", "Acciones", "Espacios"]
       : ["Acciones", "Páginas", "Espacios"];
   return items.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));

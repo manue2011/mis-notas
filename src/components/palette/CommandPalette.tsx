@@ -26,13 +26,14 @@ type Props = {
   organizationId: string;
   slug: string;
   pages: FlatPage[];
-  workspaces: { id: string; slug: string; name: string; accent: AccentKey }[];
+  workspaces: { id: string; slug: string; name: string; accent: AccentKey; icon: string | null }[];
   canCreate: boolean;
+  canManage: boolean;
 };
 
 /** Ctrl/Cmd + K: jump to a page, search, create a page or switch workspace. */
 export function CommandPalette(props: Props) {
-  const { organizationId, slug, pages, workspaces, canCreate } = props;
+  const { organizationId, slug, pages, workspaces, canCreate, canManage } = props;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -49,8 +50,8 @@ export function CommandPalette(props: Props) {
 
   const { hits, loading } = useRemoteSearch(organizationId, open ? query : "");
   const items = useMemo(
-    () => buildPaletteItems({ query, slug, pages, workspaces, canCreate, remoteHits: hits }),
-    [query, slug, pages, workspaces, canCreate, hits],
+    () => buildPaletteItems({ query, slug, pages, workspaces, canCreate, canManage, remoteHits: hits }),
+    [query, slug, pages, workspaces, canCreate, canManage, hits],
   );
   const active = Math.min(activeIndex, items.length - 1);
 
