@@ -118,6 +118,32 @@ export async function updateWorkspaceGeneralAction(input: {
   });
 }
 
+const domainSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .transform((value) => value.replace(/^@/, ""))
+  .refine((value) => value === "" || /^(?=.{4,253}$)([a-z0-9](-*[a-z0-9])*\.)+[a-z]{2,63}$/.test(value), {
+    message: "Escribe solo el dominio, por ejemplo empresa.com.",
+  });
+
+/** Only people with an email at this domain can join with a link. Empty removes it. */
+export async function setAllowedDomainAction(organizationId: string, domain: string): Promise<WorkspaceActionResult> {
+  const id = z.string().min(1).safeParse(organizationId);
+  const parsed = domainSchema.safeParse(domain);
+  if (!id.success) return { ok: false, error: "Espacio no válido." };
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  return withWorkspaceErrors(async () => {
+    const access = await requireWorkspaceById(id.data, { settings: ["update"] });
+    await db
+      .update(workspaceSettings)
+      .set({ allowedEmailDomain: parsed.data || null, updatedAt: new Date() })
+      .where(eq(workspaceSettings.organizationId, access.organizationId));
+    revalidatePath(`/espacio/${access.slug}/ajustes`);
+  });
+}
+
 /** Remembers the last workspace opened, so "/" can go back to it. */
 export async function rememberWorkspaceAction(organizationId: string): Promise<void> {
   const id = z.string().min(1).safeParse(organizationId);

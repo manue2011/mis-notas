@@ -24,3 +24,13 @@ export const listMyWorkspaces = cache(async () => {
     .where(eq(member.userId, user.id))
     .orderBy(asc(organization.name));
 });
+
+/** The workspace's allowed email domain. Callers must have checked access. */
+export async function getAllowedDomain(organizationId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ domain: workspaceSettings.allowedEmailDomain })
+    .from(workspaceSettings)
+    .where(eq(workspaceSettings.organizationId, organizationId))
+    .limit(1);
+  return row?.domain ?? null;
+}

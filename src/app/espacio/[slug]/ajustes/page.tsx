@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ActiveInviteLinks } from "@/components/settings/ActiveInviteLinks";
+import { AllowedDomainForm } from "@/components/settings/AllowedDomainForm";
 import { GeneralSettingsForm } from "@/components/settings/GeneralSettingsForm";
 import { InviteLinkCreator } from "@/components/settings/InviteLinkCreator";
 import { MembersList } from "@/components/settings/MembersList";
@@ -9,8 +10,10 @@ import { HandUnderline } from "@/components/ui/HandUnderline";
 import { TopBar } from "@/components/workspace/TopBar";
 import { WorkspaceAccentPicker } from "@/components/workspace/WorkspaceAccentPicker";
 import { listActiveInviteLinks } from "@/lib/invites/queries";
+import { emailMatchesDomain } from "@/lib/invites/rules";
 import { listMembers } from "@/lib/members/queries";
 import { can, requireWorkspaceBySlug } from "@/lib/workspace/access";
+import { getAllowedDomain } from "@/lib/workspace/queries";
 
 type Props = PageProps<"/espacio/[slug]/ajustes">;
 
@@ -27,10 +30,12 @@ async function SettingsScreen({ params }: Props) {
   const access = await requireWorkspaceBySlug(slug);
   // Only the workspace's admins; to everyone else the page doesn't exist.
   if (!can(access.role, { settings: ["update"] })) notFound();
-  const [members, links] = await Promise.all([
+  const [members, links, domain] = await Promise.all([
     listMembers(access.organizationId),
     listActiveInviteLinks(access.organizationId),
+    getAllowedDomain(access.organizationId),
   ]);
+  const outsideDomain = domain ? members.filter((m) => !emailMatchesDomain(m.email, domain)).length : 0;
 
   return (
     <>
@@ -55,6 +60,23 @@ async function SettingsScreen({ params }: Props) {
                 <WorkspaceAccentPicker organizationId={access.organizationId} accent={access.accent} />
                 <p className="text-sm text-ink-muted">Se guarda al momento, como en la barra lateral.</p>
               </div>
+            </div>
+          </SettingsSection>
+          <SettingsSection
+            id="acceso"
+            title="Acceso"
+            description="Limita quién puede entrar con un enlace de invitación según el dominio de su correo."
+          >
+            <div className="flex flex-col gap-4">
+              <AllowedDomainForm organizationId={access.organizationId} domain={domain} />
+              {outsideDomain > 0 ? (
+                <p className="max-w-md text-sm text-ink-muted">
+                  {outsideDomain === 1
+                    ? "1 miembro actual tiene un correo de otro dominio: sigue dentro."
+                    : `${outsideDomain} miembros actuales tienen un correo de otro dominio: siguen dentro.`}{" "}
+                  La regla solo se aplica a quien entra a partir de ahora.
+                </p>
+              ) : null}
             </div>
           </SettingsSection>
           <SettingsSection
