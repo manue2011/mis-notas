@@ -1,5 +1,5 @@
 import { ServerBlockNoteEditor } from "@blocknote/server-util";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import * as Y from "yjs";
 import { db } from "@/db";
 import { page, user } from "@/db/schema";
@@ -12,6 +12,14 @@ import { env } from "./env";
 // Loading pages into Yjs documents and saving them back to Postgres.
 
 const editor = ServerBlockNoteEditor.create({ schema: serverPageSchema });
+
+/**
+ * Yjs author id used when building a document from saved blocks. Fixed, so
+ * two builds of the same page produce the very same items: if the server
+ * restarts before saving and rebuilds, a browser still holding the first
+ * build merges with the second instead of getting everything twice.
+ */
+const SEED_CLIENT_ID = 1;
 
 export type PageRef = { organizationId: string; pageId: string };
 
@@ -35,14 +43,25 @@ export async function loadPage(doc: Y.Doc, { organizationId, pageId }: PageRef):
 
   if (row.yjsState) {
     Y.applyUpdate(doc, row.yjsState);
-  } else {
-    doc.transact(() => {
-      if (row.content.length) {
-        editor.blocksToYXmlFragment(row.content as never, doc.getXmlFragment(CONTENT_FRAGMENT));
-      }
-      doc.getText(TITLE_TEXT).insert(0, row.title);
-    });
+    return true;
   }
+
+  const seed = new Y.Doc();
+  seed.clientID = SEED_CLIENT_ID;
+  seed.transact(() => {
+    if (row.content.length) {
+      editor.blocksToYXmlFragment(row.content as never, seed.getXmlFragment(CONTENT_FRAGMENT));
+    }
+    seed.getText(TITLE_TEXT).insert(0, row.title);
+  });
+  const update = Y.encodeStateAsUpdate(seed);
+  seed.destroy();
+  Y.applyUpdate(doc, update);
+  // Keep the build, so later loads start from it rather than building again.
+  await db
+    .update(page)
+    .set({ yjsState: update })
+    .where(and(eq(page.id, pageId), isNull(page.yjsState)));
   return true;
 }
 

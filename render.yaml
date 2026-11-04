@@ -1,0 +1,26 @@
+# Render Blueprint for the real-time server (realtime/). See realtime/README.md.
+services:
+  - type: web
+    name: libreta-realtime
+    runtime: node
+    plan: free
+    # Next to the Neon database (aws-eu-central-1).
+    region: frankfurt
+    buildCommand: npm ci && npm run realtime:build
+    startCommand: npm run realtime:start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Filled in by hand in Render's dashboard (sync: false = never in the repo).
+      - key: DATABASE_URL
+        sync: false
+      - key: REALTIME_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
