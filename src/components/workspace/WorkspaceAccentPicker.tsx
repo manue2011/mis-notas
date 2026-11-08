@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { FormAlert } from "@/components/auth/FormAlert";
-import { AccentSwatches } from "@/components/ui/AccentSwatches";
+import { AccentSelect } from "@/components/ui/AccentSelect";
 import { accentHex, type AccentKey } from "@/lib/accent";
 import { setAccentAction } from "@/lib/workspace/actions";
 
@@ -41,7 +41,7 @@ export function WorkspaceAccentPicker({
 
   return (
     <div ref={ref} className="flex flex-col gap-1">
-      <AccentSwatches value={value} onChange={change} label="Color del espacio" />
+      <AccentSelect value={value} onChange={change} onPreview={paint} label="Color del espacio" />
       <FormAlert message={error} />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import { FormAlert } from "@/components/auth/FormAlert";
-import { AccentSwatches } from "@/components/ui/AccentSwatches";
+import { AccentSelect } from "@/components/ui/AccentSelect";
 import { Button } from "@/components/ui/Button";
 import { Monogram } from "@/components/ui/Monogram";
 import { TextField } from "@/components/ui/TextField";
@@ -18,10 +18,14 @@ export function NewWorkspaceForm() {
     null,
   );
 
+  // Previews the whole page in the color.
+  function paint(next: AccentKey) {
+    ref.current?.closest<HTMLElement>(".accent-scope")?.style.setProperty("--accent", accentHex(next));
+  }
+
   function pickAccent(next: AccentKey) {
     setAccent(next);
-    // Preview the whole page in the chosen color.
-    ref.current?.closest<HTMLElement>(".accent-scope")?.style.setProperty("--accent", accentHex(next));
+    paint(next);
   }
 
   return (
@@ -42,7 +46,13 @@ export function NewWorkspaceForm() {
       </div>
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium text-ink-muted">Color del espacio</legend>
-        <AccentSwatches value={accent} onChange={pickAccent} label="Color del espacio" className="-ml-2" />
+        <AccentSelect
+          value={accent}
+          onChange={pickAccent}
+          onPreview={paint}
+          label="Color del espacio"
+          className="max-w-xs"
+        />
       </fieldset>
       <FormAlert message={state?.error ?? null} />
       <Button type="submit" pending={pending} className="w-full sm:w-auto sm:self-start">
