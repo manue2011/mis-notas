@@ -75,6 +75,14 @@
   letter-spacing: -0.01em;
 }
 
+/*
+ * Big headings take two ruled lines, so they still sit on the rules without
+ * overlapping. Level 1 is the default and carries no data-level.
+ */
+.notebook-editor [data-content-type="heading"]:not([data-level="3"]) .bn-inline-content {
+  line-height: calc(var(--rule-gap) * 2);
+}
+
 /* Placeholders are a hint, not text. */
 .notebook-editor .bn-inline-content:has(> .ProseMirror-trailingBreak:only-child)::before {
   color: color-mix(in oklch, var(--ink-muted) 75%, transparent);

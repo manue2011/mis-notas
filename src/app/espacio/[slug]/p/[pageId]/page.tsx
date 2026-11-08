@@ -17,6 +17,10 @@ import { can } from "@/lib/workspace/access";
 
 type Params = PageProps<"/espacio/[slug]/p/[pageId]">["params"];
 
+// Server actions run with their page's limit: importing a PDF (reading it,
+// uploading its images) can take a while.
+export const maxDuration = 60;
+
 export default function NotebookPage({ params }: { params: Params }) {
   return (
     <Suspense fallback={<div className="min-h-16 border-b border-dashed border-border" />}>

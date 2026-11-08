@@ -42,7 +42,40 @@ export type CloudinaryResource = {
   width: number;
   height: number;
   secure_url: string;
+  /** Number of pages, for PDFs. */
+  pages?: number;
 };
+
+/**
+ * Uploads an image from the server (a file, or a URL Cloudinary fetches
+ * itself), converted to WebP like the browser uploads.
+ */
+export async function uploadImageFromServer(
+  file: Blob | string,
+  target: { folder: string; publicId: string },
+): Promise<CloudinaryResource> {
+  const { cloudName, apiKey, apiSecret } = cloudinaryConfig();
+  const params = {
+    folder: target.folder,
+    public_id: target.publicId,
+    timestamp: Math.floor(Date.now() / 1000),
+    transformation: "f_webp",
+  };
+  const body = new FormData();
+  for (const [key, value] of Object.entries(params)) body.append(key, String(value));
+  body.append("api_key", apiKey);
+  body.append("signature", signParams(params, apiSecret));
+  body.append("file", file);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body });
+  if (!res.ok) throw new Error(`Cloudinary upload failed: ${res.status}`);
+  return (await res.json()) as CloudinaryResource;
+}
+
+/** Delivery URL of one PDF page rendered as an image (Cloudinary's pg_N). */
+export function pdfPageImageUrl(publicId: string, pageNumber: number): string {
+  const { cloudName } = cloudinaryConfig();
+  return `https://res.cloudinary.com/${cloudName}/image/upload/pg_${pageNumber}/${publicId}.png`;
+}
 
 function adminAuth() {
   const { apiKey, apiSecret, cloudName } = cloudinaryConfig();

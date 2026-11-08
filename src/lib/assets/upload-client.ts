@@ -32,7 +32,7 @@ export async function uploadImage(
   return result;
 }
 
-function postWithProgress(url: string, body: FormData, onProgress: (fraction: number) => void) {
+export function postWithProgress(url: string, body: FormData, onProgress: (fraction: number) => void) {
   return new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);

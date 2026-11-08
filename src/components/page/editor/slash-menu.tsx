@@ -4,6 +4,7 @@ import { insertOrUpdateBlockForSlashMenu } from "@blocknote/core";
 import type { DefaultReactSuggestionItem } from "@blocknote/react";
 import {
   Braces,
+  FileText,
   Heading1,
   Heading2,
   Heading3,
@@ -19,8 +20,10 @@ import type { PageBlock, PageEditor } from "./schema";
 
 const icon = (Icon: typeof Type) => <Icon size={18} strokeWidth={1.5} aria-hidden />;
 
+type SlashActions = { choosePdf: () => void };
+
 /** The "/" menu: the five notebook blocks first, then the rest. */
-export function slashMenuItems(editor: PageEditor): DefaultReactSuggestionItem[] {
+export function slashMenuItems(editor: PageEditor, actions: SlashActions): DefaultReactSuggestionItem[] {
   const insert = (block: PageBlock) => () => insertOrUpdateBlockForSlashMenu(editor, block);
   const main = "Bloques";
   const more = "Más";
@@ -37,5 +40,6 @@ export function slashMenuItems(editor: PageEditor): DefaultReactSuggestionItem[]
     { title: "Lista", subtext: "Con viñetas", aliases: ["ul", "vinetas"], group: more, icon: icon(List), onItemClick: insert({ type: "bulletListItem" }) },
     { title: "Lista numerada", subtext: "Paso a paso", aliases: ["ol", "numeros"], group: more, icon: icon(ListOrdered), onItemClick: insert({ type: "numberedListItem" }) },
     { title: "Cita", subtext: "Palabras de otro", aliases: ["quote"], group: more, icon: icon(Quote), onItemClick: insert({ type: "quote" }) },
+    { title: "Importar PDF", subtext: "Su texto e imágenes, aquí", aliases: ["pdf", "documento", "importar"], group: "Traer de fuera", icon: icon(FileText), onItemClick: actions.choosePdf },
   ];
 }

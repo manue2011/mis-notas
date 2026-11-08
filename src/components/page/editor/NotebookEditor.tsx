@@ -14,9 +14,12 @@ import { syntaxHighlighter } from "@blocknote/code-block";
 import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { uploadImage, UploadError } from "@/lib/assets/upload-client";
 import type { FlatPage } from "@/lib/pages/tree";
+import { importPdfFile, PdfImportClientError } from "@/lib/pdf/import-client";
 import { EditorContext, type PageEditorContext } from "./editor-context";
 import { PagePreviewLayer } from "./inline/PagePreviewLayer";
 import { mentionMenuItems } from "./mention-menu";
+import { pdfImportStore } from "./pdf-import-store";
+import { PdfImportStatus } from "./PdfImportStatus";
 import { pageDictionary, pageSchema, type PageBlock, type PageEditor } from "./schema";
 import { slashMenuItems } from "./slash-menu";
 import { uploadStore } from "./upload-store";
@@ -118,6 +121,37 @@ export default function NotebookEditor(props: Props) {
     onReady?.({ focus: () => editor.focus() });
   }, [editor, onReady]);
 
+  // "/ Importar PDF": the blocks go where the menu was opened.
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const pdfTargetRef = useRef<string | null>(null);
+  const choosePdf = useCallback(() => {
+    const busy = pdfImportStore.get();
+    if (busy?.phase === "uploading" || busy?.phase === "reading") return;
+    pdfTargetRef.current = editor.getTextCursorPosition().block.id;
+    pdfInputRef.current?.click();
+  }, [editor]);
+
+  const importPdf = useCallback(
+    (file: File) => {
+      const fileName = file.name;
+      importPdfFile(file, { organizationId, pageId }, (step) => pdfImportStore.set({ fileName, ...step }))
+        .then((result) => {
+          const blocks = result.blocks as PageBlock[];
+          const target = pdfTargetRef.current ? editor.getBlock(pdfTargetRef.current) : undefined;
+          const empty = target?.type === "paragraph" && (target.content as unknown[]).length === 0;
+          if (target && empty) editor.replaceBlocks([target], blocks);
+          else editor.insertBlocks(blocks, target ?? editor.document[editor.document.length - 1], "after");
+          pdfImportStore.set({ fileName, phase: "done", pages: result.pages, images: result.images });
+        })
+        .catch((error: unknown) => {
+          const message =
+            error instanceof PdfImportClientError ? error.message : "No se ha podido importar el PDF.";
+          pdfImportStore.set({ fileName, phase: "error", error: message });
+        });
+    },
+    [editor, organizationId, pageId],
+  );
+
   const context = useMemo<PageEditorContext>(
     () => ({
       editable,
@@ -143,7 +177,7 @@ export default function NotebookEditor(props: Props) {
       >
         <SuggestionMenuController
           triggerCharacter="/"
-          getItems={async (query) => filterSuggestionItems(slashMenuItems(editor), query)}
+          getItems={async (query) => filterSuggestionItems(slashMenuItems(editor, { choosePdf }), query)}
         />
         <SuggestionMenuController
           triggerCharacter="@"
@@ -151,6 +185,18 @@ export default function NotebookEditor(props: Props) {
         />
       </BlockNoteView>
       <PagePreviewLayer organizationId={organizationId} pages={pages} />
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        hidden
+        onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = ""; // so the same file can be picked again
+          if (file) importPdf(file);
+        }}
+      />
+      <PdfImportStatus />
     </EditorContext>
   );
 }

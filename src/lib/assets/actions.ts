@@ -1,10 +1,9 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { asset, page } from "@/db/schema";
+import { asset } from "@/db/schema";
 import {
   cloudinaryConfig,
   CloudinaryNotConfiguredError,
@@ -15,7 +14,8 @@ import {
   UPLOAD_FORMATS,
   workspaceFolder,
 } from "@/lib/cloudinary/server";
-import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
+import { WorkspaceForbiddenError } from "@/lib/workspace/access";
+import { requirePageUpload } from "./page-access";
 
 export type UploadTicket = {
   ok: true;
@@ -106,17 +106,6 @@ export async function registerUploadAction(
 
     return { ok: true, assetId: row.id, url: image.secure_url, width: image.width, height: image.height };
   });
-}
-
-async function requirePageUpload(organizationId: string, pageId: string): Promise<WorkspaceAccess> {
-  const access = await requireWorkspaceById(organizationId, { asset: ["create"] });
-  const [found] = await db
-    .select({ id: page.id })
-    .from(page)
-    .where(and(eq(page.id, pageId), eq(page.organizationId, access.organizationId), isNull(page.deletedAt)))
-    .limit(1);
-  if (!found) throw new WorkspaceForbiddenError();
-  return access;
 }
 
 async function guard<T>(fn: () => Promise<T | Failure>): Promise<T | Failure> {
