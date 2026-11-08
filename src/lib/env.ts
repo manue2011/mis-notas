@@ -21,7 +21,8 @@ const envSchema = z
     // Real-time editing (Hocuspocus on Render) is on only when both are set.
     // REALTIME_URL is the server's public wss:// address.
     REALTIME_URL: z.url().optional(),
-    REALTIME_SECRET: z.string().min(32).optional(),
+    // Trimmed: a space pasted by mistake must not break the signatures.
+    REALTIME_SECRET: z.string().trim().min(32).optional(),
   })
   .refine((e) => !e.GOOGLE_CLIENT_ID === !e.GOOGLE_CLIENT_SECRET, {
     path: ["GOOGLE_CLIENT_SECRET"],

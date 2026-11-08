@@ -3,6 +3,7 @@
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
 import { getPageTicketAction } from "@/lib/realtime/actions";
+import { PAGE_UNAVAILABLE } from "@/lib/realtime/doc";
 
 // One live connection per open page, shared by whoever renders it and kept
 // outside React: components acquire it while mounted and release it after.
@@ -17,8 +18,8 @@ export type SessionState = {
   synced: boolean;
   /** Local changes the server hasn't confirmed yet. */
   unsynced: number;
-  /** The server refused us (no access any more). */
-  denied: boolean;
+  /** The server refused us: no access any more, or it couldn't load the page. */
+  refusal: "denied" | "unavailable" | null;
 };
 
 export type PageSession = {
@@ -39,7 +40,7 @@ const notify = (pageId: string) => listeners.get(pageId)?.forEach((listener) => 
 
 function open({ url, organizationId, pageId }: Options): Entry {
   const doc = new Y.Doc();
-  const entry = { doc, refs: 0, state: { status: "connecting", synced: false, unsynced: 0, denied: false } } as Entry;
+  const entry = { doc, refs: 0, state: { status: "connecting", synced: false, unsynced: 0, refusal: null } } as Entry;
   const update = (patch: Partial<SessionState>) => {
     entry.state = { ...entry.state, ...patch };
     notify(pageId);
@@ -58,7 +59,8 @@ function open({ url, organizationId, pageId }: Options): Entry {
       if (state) update({ synced: true });
     },
     onUnsyncedChanges: ({ number }) => update({ unsynced: number }),
-    onAuthenticationFailed: () => update({ denied: true }),
+    onAuthenticationFailed: ({ reason }) =>
+      update({ refusal: reason === PAGE_UNAVAILABLE ? "unavailable" : "denied" }),
   });
   return entry;
 }

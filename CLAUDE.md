@@ -233,6 +233,10 @@ Permisos de los espacios: todo pasa por `src/lib/workspace/access.ts`
    permitido, modo oscuro, tipografía por espacio.
 4. **Tiempo real:** edición simultánea con Yjs y Hocuspocus en Render, avatares
    de presencia y cursores de colores.
+5. **Importar y legal:** color del espacio en un desplegable, páginas de
+   privacidad y condiciones (RGPD), descargar mis datos y eliminar mi cuenta,
+   importar un PDF como nota (texto e imágenes en su orden, con `unpdf`) e
+   importar desde Notion (zip «Markdown & CSV», con `fflate`).
 
 ## Reglas de trabajo
 

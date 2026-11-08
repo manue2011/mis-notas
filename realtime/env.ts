@@ -9,7 +9,7 @@ const optional = z.string().min(1).optional();
 const envSchema = z.object({
   DATABASE_URL: z.url(),
   /** Same value as REALTIME_SECRET on Vercel: verifies page tickets. */
-  REALTIME_SECRET: z.string().min(32),
+  REALTIME_SECRET: z.string().trim().min(32),
   PORT: z.coerce.number().int().positive().default(1234),
   // Needed to check screenshots and delete unused images.
   CLOUDINARY_CLOUD_NAME: optional,

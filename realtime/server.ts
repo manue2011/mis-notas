@@ -1,4 +1,5 @@
 import { Server } from "@hocuspocus/server";
+import { PAGE_UNAVAILABLE } from "@/lib/realtime/doc";
 import { verifyTicket, type Ticket } from "@/lib/realtime/ticket";
 import { env } from "./env";
 import { loadPage, storePage } from "./persistence";
@@ -26,8 +27,14 @@ const server = new Server<Context>({
   },
 
   async onLoadDocument({ document, documentName, context }) {
-    const found = await loadPage(document, { organizationId: context.organizationId, pageId: documentName });
-    if (!found) throw new Error("Page not found");
+    // Hocuspocus refuses the connection with `reason`, so the page can tell
+    // "couldn't open it" apart from "no access".
+    const found = await loadPage(document, { organizationId: context.organizationId, pageId: documentName }).catch(
+      (error: unknown) => {
+        throw Object.assign(new Error("Page could not be loaded", { cause: error }), { reason: PAGE_UNAVAILABLE });
+      },
+    );
+    if (!found) throw Object.assign(new Error("Page not found"), { reason: PAGE_UNAVAILABLE });
   },
 
   async onStoreDocument({ document, documentName, lastContext }) {

@@ -39,7 +39,10 @@ const noop = () => {};
 
 /** What the line under the title says about the connection. */
 function describe(state: SessionState | null): { text: string; tone?: "error" } {
-  if (state?.denied) return { text: "Ya no tienes acceso a esta página.", tone: "error" };
+  if (state?.refusal === "denied") return { text: "Ya no tienes acceso a esta página.", tone: "error" };
+  if (state?.refusal === "unavailable") {
+    return { text: "No se pudo abrir la página. Prueba a recargar en un rato.", tone: "error" };
+  }
   if (!state?.synced) return { text: "Conectando…" };
   if (state.status === "disconnected" || state.status === "connecting") {
     return state.unsynced > 0
@@ -62,7 +65,7 @@ export function RealtimePageView(props: Props) {
     editorRef.current = handle;
   }, []);
   const live = session && state?.synced ? session : null;
-  const canEdit = editable && !state?.denied;
+  const canEdit = editable && !state?.refusal;
 
   // Closing the tab with changes the server hasn't got yet: ask first.
   const unsynced = state?.unsynced ?? 0;
@@ -113,24 +116,21 @@ export function RealtimePageView(props: Props) {
 
 const SIDEBAR_REFRESH_MS = 3500;
 
-/** The shared title. After you rename, the sidebar catches up once it's saved. */
+/**
+ * The shared title. When it changes, yours or someone else's, the sidebar
+ * catches up once the server has saved it.
+ */
 function LiveTitle({ doc, editable, onEnter }: { doc: Y.Doc; editable: boolean; onEnter: () => void }) {
   const [title, setTitle] = useSharedTitle(doc);
   const router = useRouter();
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const shown = useRef(title);
 
-  return (
-    <PageTitle
-      initialTitle={title}
-      value={title}
-      editable={editable}
-      onEnter={onEnter}
-      onChange={(next) => {
-        setTitle(next);
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => router.refresh(), SIDEBAR_REFRESH_MS);
-      }}
-    />
-  );
+  useEffect(() => {
+    if (title === shown.current) return;
+    shown.current = title;
+    const timer = setTimeout(() => router.refresh(), SIDEBAR_REFRESH_MS);
+    return () => clearTimeout(timer);
+  }, [title, router]);
+
+  return <PageTitle initialTitle={title} value={title} editable={editable} onEnter={onEnter} onChange={setTitle} />;
 }
