@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Settings } from "lucide-react";
+import { BookOpen, CircleUser, Settings } from "lucide-react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { buttonClasses } from "@/components/ui/Button";
 import { getSession, isSuperadmin } from "@/lib/auth/session";
@@ -7,7 +7,7 @@ import { APP_HOME } from "@/lib/invites/rules";
 
 /**
  * Top-right links: "Iniciar sesión" for visitors; "Mis libretas",
- * "Administración" (superadmin only) and "Cerrar sesión" once signed in.
+ * "Administración" (superadmin only), "Mi cuenta" and "Cerrar sesión" once signed in.
  * Reads the session, so render it inside <Suspense>.
  */
 export async function SessionNav() {
@@ -29,6 +29,10 @@ export async function SessionNav() {
           Administración
         </Link>
       ) : null}
+      <Link href="/cuenta" className={buttonClasses("ghost")}>
+        <CircleUser size={16} strokeWidth={1.75} aria-hidden />
+        Mi cuenta
+      </Link>
       <SignOutButton />
       <Link href={APP_HOME} className={buttonClasses("primary")}>
         <BookOpen size={16} strokeWidth={1.75} aria-hidden />

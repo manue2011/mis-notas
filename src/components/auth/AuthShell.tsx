@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LegalLinks } from "@/components/legal/LegalLinks";
 import { AccentScope } from "@/components/ui/AccentScope";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { Logo } from "@/components/ui/Logo";
@@ -16,6 +17,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <div className="w-full max-w-[25rem]">
           <Logo />
           <div className="mt-8">{children}</div>
+          <LegalLinks className="mt-10" />
         </div>
       </main>
       <AuthDecor />

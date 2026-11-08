@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { CircleUser, Settings } from "lucide-react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 import { LeaveWorkspaceButton } from "./LeaveWorkspaceButton";
@@ -19,6 +19,10 @@ export function UserMenu({ name, email, superadmin, workspace }: Props) {
         <p className="truncate text-xs text-ink-muted">{email}</p>
       </div>
       <ThemeSwitcher className="mb-1" />
+      <Link href="/cuenta" className="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm hover:bg-surface/70">
+        <CircleUser size={16} strokeWidth={1.75} aria-hidden />
+        Mi cuenta
+      </Link>
       {superadmin ? (
         <Link
           href="/admin"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
@@ -89,6 +90,18 @@ export function SignupForm({ googleEnabled }: { googleEnabled: boolean }) {
           {pending ? "Creando tu cuenta…" : "Crear cuenta"}
         </Button>
       </form>
+      {/* Covers the Google button too: both create the account. */}
+      <p className="mt-4 text-sm text-ink-muted">
+        Al crear la cuenta aceptas las{" "}
+        <Link href="/terminos" className="underline underline-offset-4 hover:text-ink">
+          condiciones de uso
+        </Link>{" "}
+        y la{" "}
+        <Link href="/privacidad" className="underline underline-offset-4 hover:text-ink">
+          política de privacidad
+        </Link>
+        .
+      </p>
     </>
   );
 }
