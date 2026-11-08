@@ -5,6 +5,7 @@ import { AllowedDomainForm } from "@/components/settings/AllowedDomainForm";
 import { GeneralSettingsForm } from "@/components/settings/GeneralSettingsForm";
 import { InviteLinkCreator } from "@/components/settings/InviteLinkCreator";
 import { MembersList } from "@/components/settings/MembersList";
+import { NotionImport } from "@/components/settings/NotionImport";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { TopBar } from "@/components/workspace/TopBar";
@@ -108,6 +109,13 @@ async function SettingsScreen({ params }: Props) {
                 <ActiveInviteLinks organizationId={access.organizationId} links={links} />
               </div>
             </div>
+          </SettingsSection>
+          <SettingsSection
+            id="importar"
+            title="Importar de Notion"
+            description="Trae tus páginas de Notion a este espacio, con su contenido e imágenes."
+          >
+            <NotionImport organizationId={access.organizationId} slug={access.slug} />
           </SettingsSection>
         </div>
       </div>
