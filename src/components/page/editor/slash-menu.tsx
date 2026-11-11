@@ -9,11 +9,13 @@ import {
   Heading2,
   Heading3,
   Image,
+  ListCollapse,
   List,
   ListOrdered,
   Quote,
   SquareCheck,
   StickyNote,
+  Table,
   Type,
 } from "lucide-react";
 import type { PageBlock, PageEditor } from "./schema";
@@ -21,6 +23,9 @@ import type { PageBlock, PageEditor } from "./schema";
 const icon = (Icon: typeof Type) => <Icon size={18} strokeWidth={1.5} aria-hidden />;
 
 type SlashActions = { choosePdf: () => void };
+
+const emptyRow = { cells: ["", "", ""] };
+const emptyTable: PageBlock = { type: "table", content: { type: "tableContent", rows: [emptyRow, emptyRow] } };
 
 /** The "/" menu: the five notebook blocks first, then the rest. */
 export function slashMenuItems(editor: PageEditor, actions: SlashActions): DefaultReactSuggestionItem[] {
@@ -39,6 +44,8 @@ export function slashMenuItems(editor: PageEditor, actions: SlashActions): Defau
     { title: "Apartado", subtext: "Encabezado pequeño", aliases: ["h3"], group: more, icon: icon(Heading3), onItemClick: insert({ type: "heading", props: { level: 3 } }) },
     { title: "Lista", subtext: "Con viñetas", aliases: ["ul", "vinetas"], group: more, icon: icon(List), onItemClick: insert({ type: "bulletListItem" }) },
     { title: "Lista numerada", subtext: "Paso a paso", aliases: ["ol", "numeros"], group: more, icon: icon(ListOrdered), onItemClick: insert({ type: "numberedListItem" }) },
+    { title: "Desplegable", subtext: "Se abre con un clic", aliases: ["toggle", "plegable", "desplegar"], group: more, icon: icon(ListCollapse), onItemClick: insert({ type: "toggleListItem" }) },
+    { title: "Tabla", subtext: "Filas y columnas", aliases: ["table", "tabla"], group: more, icon: icon(Table), onItemClick: insert(emptyTable) },
     { title: "Cita", subtext: "Palabras de otro", aliases: ["quote"], group: more, icon: icon(Quote), onItemClick: insert({ type: "quote" }) },
     { title: "Importar PDF", subtext: "Su texto e imágenes, aquí", aliases: ["pdf", "documento", "importar"], group: "Traer de fuera", icon: icon(FileText), onItemClick: actions.choosePdf },
   ];

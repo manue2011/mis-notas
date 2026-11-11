@@ -9,6 +9,7 @@ import { createImportedPagesAction } from "./actions";
 import { databaseBlocks, finishBlocks, text, type LooseBlock, type PageTarget } from "./blocks";
 import { parseCsv } from "./csv";
 import { prepareMarkdown } from "./markdown";
+import { parseOutline, restoreToggles } from "./outline";
 import { basename, resolveLink, withoutExtension } from "./paths";
 import { buildTree, type NotionEntry } from "./tree";
 import { unzipExport } from "./unzip";
@@ -142,17 +143,20 @@ type PageContext = {
 
 async function pageFor(entry: NotionEntry, ctx: PageContext): Promise<LooseBlock[]> {
   const prepared = prepareMarkdown(ctx.read(entry.file), entry.file);
-  const parsed = ctx.editor.tryParseMarkdownToBlocks(prepared.markdown) as unknown as LooseBlock[];
+  const parsed = parseOutline(
+    prepared.markdown,
+    (markdown) => ctx.editor.tryParseMarkdownToBlocks(markdown) as unknown as LooseBlock[],
+  );
 
   const markers = new Map<string, LooseBlock | null>();
   for (const callout of prepared.callouts) {
-    markers.set(callout.marker, callout.text ? { type: "stickyNote", content: [text(callout.text)] } : null);
+    markers.set(callout.marker, callout.text ? { type: "stickyNote", content: inlineMarkdown(callout.text, ctx) } : null);
   }
   for (const image of prepared.images) {
     markers.set(image.marker, await imageBlock(image.path, image.alt, entry, ctx));
   }
 
-  return finishBlocks(parsed, {
+  const blocks = finishBlocks(parsed, {
     replaceMarker: (marker) => markers.get(marker),
     linkTarget: (href) => {
       const path = resolveLink(entry.file, href);
@@ -160,6 +164,13 @@ async function pageFor(entry: NotionEntry, ctx: PageContext): Promise<LooseBlock
       return ctx.targetFor(withoutExtension(path).replace(/_all$/, ""));
     },
   });
+  return restoreToggles(blocks);
+}
+
+/** A callout's text with its bold, links... (it's Markdown too). */
+function inlineMarkdown(markdown: string, ctx: PageContext): unknown[] {
+  const [first] = ctx.editor.tryParseMarkdownToBlocks(markdown) as unknown as LooseBlock[];
+  return Array.isArray(first?.content) && first.content.length ? first.content : [text(markdown)];
 }
 
 async function imageBlock(path: string, alt: string, entry: NotionEntry, ctx: PageContext): Promise<LooseBlock> {

@@ -1,8 +1,8 @@
 import { resolveLink } from "./paths";
 
-// Gets a Notion page's Markdown ready for BlockNote's parser. What it can't
-// turn into our blocks (images, callouts) is swapped for a marker paragraph,
-// then replaced once parsed (see blocks.ts).
+// Gets a Notion page's Markdown ready for parsing (see outline.ts). What it
+// can't turn into our blocks (images, callouts) is swapped for a marker
+// paragraph, then replaced once parsed (see blocks.ts).
 
 export type ImageRef = { marker: string; path: string; alt: string };
 export type CalloutRef = { marker: string; text: string };
@@ -15,6 +15,16 @@ const stripTags = (html: string) => html.replace(/<[^>]+>/g, "");
 // A callout starts with its icon (an emoji): our sticky notes don't have one.
 const leadingIcon = /^[\p{Extended_Pictographic}\p{Emoji_Modifier}️‍\s]+/u;
 
+/**
+ * A marker on a line of its own, indented like the line it was found in,
+ * so it stays inside the toggle or list item it belongs to.
+ */
+function ownLine(markdown: string, offset: number, marker: string): string {
+  const lineStart = markdown.lastIndexOf("\n", offset - 1) + 1;
+  const indent = /^[ \t]*/.exec(markdown.slice(lineStart))![0];
+  return `\n\n${indent}${marker}\n\n${indent}`;
+}
+
 export function prepareMarkdown(source: string, file: string): PreparedPage {
   let markdown = source.replace(/\r\n?/g, "\n");
   let title: string | null = null;
@@ -25,7 +35,7 @@ export function prepareMarkdown(source: string, file: string): PreparedPage {
   }
 
   const callouts: CalloutRef[] = [];
-  markdown = markdown.replace(/<aside>([\s\S]*?)<\/aside>/g, (_, inner: string) => {
+  markdown = markdown.replace(/<aside>([\s\S]*?)<\/aside>/g, (_, inner: string, offset: number, whole: string) => {
     const marker = markerFor("NOTE", callouts.length);
     const text = stripTags(inner)
       .split("\n")
@@ -34,43 +44,33 @@ export function prepareMarkdown(source: string, file: string): PreparedPage {
       .join(" ")
       .replace(leadingIcon, "");
     callouts.push({ marker, text });
-    return `\n\n${marker}\n\n`;
+    return ownLine(whole, offset, marker);
   });
 
   const images: ImageRef[] = [];
-  markdown = markdown.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (whole, alt: string, href: string) => {
-    const path = resolveLink(file, href.trim());
-    // Pictures on the web: we can't copy them, so keep a link to them.
-    if (!path) return `[${alt || "Imagen"}](${href})`;
-    const marker = markerFor("IMG", images.length);
-    images.push({ marker, path, alt });
-    return `\n\n${marker}\n\n`;
-  });
+  markdown = markdown.replace(
+    // Notion leaves parentheses in file names unescaped: image_(2).png.
+    /!\[([^\]]*)\]\(((?:[^()\s]|\([^()\s]*\))+)\)/g,
+    (_, alt: string, href: string, offset: number, whole: string) => {
+      const path = resolveLink(file, href.trim());
+      // Pictures on the web: we can't copy them, so keep a link to them.
+      if (!path) return `[${alt || "Imagen"}](${href})`;
+      const marker = markerFor("IMG", images.length);
+      images.push({ marker, path, alt });
+      return ownLine(whole, offset, marker);
+    },
+  );
 
-  // There's no table block: each row becomes a list item, cells joined by "·",
-  // so none of the text is lost.
-  markdown = markdown.replace(/(?:^\|.*\|[ \t]*(?:\n|$))+/gm, (table) => {
-    const rows = table
-      .trim()
-      .split("\n")
-      .filter((row) => !/^\|[\s:|-]+\|$/.test(row.trim()))
-      .map((row) =>
-        row
-          .trim()
-          .slice(1, -1)
-          .split("|")
-          .map((cell) => cell.trim())
-          .filter(Boolean)
-          .join(" · "),
-      )
-      .filter(Boolean);
-    return `\n${rows.map((row) => `- ${row}`).join("\n")}\n\n`;
-  });
-
-  // Toggles come as <details>: keep the summary (bold) and what's inside.
-  markdown = markdown
-    .replace(/<summary>([\s\S]*?)<\/summary>/g, (_, text: string) => `**${stripTags(text).trim()}**\n\n`)
-    .replace(/<\/?details>/g, "\n");
+  // Toggles exported as <details>: the summary becomes a list item with the
+  // rest indented under it, which outline.ts turns back into a toggle.
+  markdown = markdown.replace(
+    /<details>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/g,
+    (_, summary: string, inner: string) =>
+      `\n- ${stripTags(summary).trim()}\n\n${inner
+        .split("\n")
+        .map((line) => `    ${line}`)
+        .join("\n")}\n\n`,
+  );
 
   return { title, markdown, images, callouts };
 }
