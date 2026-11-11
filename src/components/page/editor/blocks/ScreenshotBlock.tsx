@@ -8,6 +8,7 @@ import { ACCEPTED_IMAGE_TYPES } from "@/lib/assets/upload-client";
 import { screenshotConfig } from "../block-configs";
 import { usePageEditor } from "../editor-context";
 import { useUploadState } from "../upload-store";
+import { ExpandImageButton, openImageViewer } from "./ImageViewer";
 
 /** A screenshot taped onto the page, with a handwritten caption (the block's text). */
 export const screenshotBlock = createReactBlockSpec(
@@ -17,7 +18,7 @@ export const screenshotBlock = createReactBlockSpec(
       <figure className="screenshot-block my-6 flex w-full flex-col items-center">
         <div
           contentEditable={false}
-          className="light-island relative max-w-full bg-photo p-2.5 pb-3 shadow-paper"
+          className="light-island group/photo relative max-w-full bg-photo p-2.5 pb-3 shadow-paper"
           style={{ rotate: "-0.8deg" }}
         >
           <Tape className="-top-2 left-6 w-24" rotate={-4} />
@@ -52,15 +53,19 @@ function ScreenshotImage({ url, width, height }: { url: string; width: number; h
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- Cloudinary already serves optimized WebP
-    <img
-      src={url}
-      alt=""
-      width={width || undefined}
-      height={height || undefined}
-      loading="lazy"
-      className="block h-auto max-h-[36rem] w-auto max-w-full"
-    />
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element -- Cloudinary already serves optimized WebP */}
+      <img
+        src={url}
+        alt=""
+        width={width || undefined}
+        height={height || undefined}
+        loading="lazy"
+        onDoubleClick={() => openImageViewer(url)}
+        className="block h-auto max-h-[36rem] w-auto max-w-full"
+      />
+      <ExpandImageButton url={url} />
+    </>
   );
 }
 

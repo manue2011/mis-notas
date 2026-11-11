@@ -20,6 +20,7 @@ import { PagePreviewLayer } from "./inline/PagePreviewLayer";
 import { mentionMenuItems } from "./mention-menu";
 import { pdfImportStore } from "./pdf-import-store";
 import { PdfImportStatus } from "./PdfImportStatus";
+import { ImageViewerHost } from "./blocks/ImageViewer";
 import { pageDictionary, pageSchema, type PageBlock, type PageEditor } from "./schema";
 import { slashMenuItems } from "./slash-menu";
 import { uploadStore } from "./upload-store";
@@ -197,6 +198,7 @@ export default function NotebookEditor(props: Props) {
         }}
       />
       <PdfImportStatus />
+      <ImageViewerHost />
     </EditorContext>
   );
 }
