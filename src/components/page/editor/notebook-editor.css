@@ -45,16 +45,32 @@
   background-color: var(--accent-soft);
 }
 
-/* Text sits on the notebook lines. */
 .notebook-editor .bn-editor {
   padding-inline: 0;
   font-size: 1.125rem;
+}
+
+/*
+ * Text sits on the notebook lines. Each text block draws its own, one per
+ * line of text: lines drawn behind the whole page drift out of step after a
+ * screenshot or a code block, and end up crossing the text.
+ */
+.notebook-editor .bn-block-content:is(
+    [data-content-type="paragraph"],
+    [data-content-type="heading"],
+    [data-content-type="bulletListItem"],
+    [data-content-type="numberedListItem"],
+    [data-content-type="checkListItem"],
+    [data-content-type="toggleListItem"],
+    [data-content-type="quote"]
+  ) {
+  --line: var(--rule-gap);
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,
-    transparent calc(var(--rule-gap) - 1px),
-    var(--rule) calc(var(--rule-gap) - 1px),
-    var(--rule) var(--rule-gap)
+    transparent calc(var(--line) - 1px),
+    var(--rule) calc(var(--line) - 1px),
+    var(--rule) var(--line)
   );
 }
 
@@ -79,8 +95,11 @@
  * Big headings take two ruled lines, so they still sit on the rules without
  * overlapping. Level 1 is the default and carries no data-level.
  */
+.notebook-editor [data-content-type="heading"]:not([data-level="3"]) {
+  --line: calc(var(--rule-gap) * 2);
+}
 .notebook-editor [data-content-type="heading"]:not([data-level="3"]) .bn-inline-content {
-  line-height: calc(var(--rule-gap) * 2);
+  line-height: var(--line);
 }
 
 /* Placeholders are a hint, not text. */
@@ -124,6 +143,19 @@
 
 .notebook-editor [data-content-type="checkListItem"][data-checked="true"] .bn-inline-content {
   color: var(--ink-muted);
+}
+
+/* Tables ruled in the notebook's own lines, headers on the panel colour. */
+.notebook-editor [data-content-type="table"] :is(td, th) {
+  border-color: var(--field-line);
+}
+.notebook-editor [data-content-type="table"] th {
+  background-color: var(--panel);
+}
+
+/* Toggles open with an arrow in the workspace accent. */
+.notebook-editor .bn-toggle-button {
+  color: var(--accent-ink);
 }
 
 .notebook-editor [data-content-type="quote"] {
