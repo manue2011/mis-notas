@@ -11,14 +11,14 @@
    paper-coloured in dark mode — keep the two lists in step. */
 :root,
 .light-island {
-  --paper: #f5efe3;
-  --panel: #ede5d4;
-  --surface: #fbf8f1;
+  --paper-0: #f5efe3;
+  --panel-0: #ede5d4;
+  --surface-0: #fbf8f1;
   --ink: #2a251f;
-  --ink-muted: #6b6156;
-  --border: #dcd2bf;
-  --rule: #e3d9c6;
-  --field-line: #cfc4ae;
+  --ink-muted-0: #6b6156;
+  --border-0: #dcd2bf;
+  --rule-0: #e3d9c6;
+  --field-line-0: #cfc4ae;
   --error: #a33a26;
   --on-error: #ffffff;
 }
@@ -31,7 +31,17 @@
   --on-accent: #ffffff;
   /* How much of the accent goes into text drawn in it (see .accent-scope). */
   --accent-ink-share: 100%;
+  --accent-ink-depth: 92%;
   --accent-soft-share: 16%;
+  /* How a workspace's paper takes its accent (see .accent-tint): a pastel of
+     the accent, mixed into each paper colour by these shares. */
+  --tint-source-share: 40%;
+  --tint-base: white;
+  --tint-paper-share: 22%;
+  --tint-panel-share: 35%;
+  --tint-surface-share: 10%;
+  --tint-line-share: 30%;
+  --tint-muted-depth: 30%;
 
   --rule-gap: 1.75rem; /* distance between notebook lines */
   --shadow-paper: 0 1px 2px rgb(42 37 31 / 0.08), 0 6px 16px -6px rgb(42 37 31 / 0.18);
@@ -42,49 +52,100 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #1e1a16;
-    --panel: #27221d;
-    --surface: #2f2923;
+    --paper-0: #1e1a16;
+    --panel-0: #27221d;
+    --surface-0: #2f2923;
     --ink: #ede5d4;
-    --ink-muted: #a89c8c;
-    --border: #3a332b;
-    --rule: #2c2620;
-    --field-line: #4a4137;
+    --ink-muted-0: #a89c8c;
+    --border-0: #3a332b;
+    --rule-0: #2c2620;
+    --field-line-0: #4a4137;
     --error: #e5836b;
     --on-error: #1e1a16;
     --sticky: #d9c47a;
     --photo: #ece6da;
     --code-bg: #14110e;
     --accent-ink-share: 50%;
+    --accent-ink-depth: 100%;
     --accent-soft-share: 24%;
+    --tint-source-share: 60%;
+    --tint-base: black;
+    --tint-paper-share: 15%;
+    --tint-panel-share: 22%;
+    --tint-surface-share: 8%;
+    --tint-line-share: 20%;
+    --tint-muted-depth: 0%;
     --shadow-paper: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 16px -6px rgb(0 0 0 / 0.6);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #1e1a16;
-  --panel: #27221d;
-  --surface: #2f2923;
+  --paper-0: #1e1a16;
+  --panel-0: #27221d;
+  --surface-0: #2f2923;
   --ink: #ede5d4;
-  --ink-muted: #a89c8c;
-  --border: #3a332b;
-  --rule: #2c2620;
-  --field-line: #4a4137;
+  --ink-muted-0: #a89c8c;
+  --border-0: #3a332b;
+  --rule-0: #2c2620;
+  --field-line-0: #4a4137;
   --error: #e5836b;
   --on-error: #1e1a16;
   --sticky: #d9c47a;
   --photo: #ece6da;
   --code-bg: #14110e;
   --accent-ink-share: 50%;
+  --accent-ink-depth: 100%;
   --accent-soft-share: 24%;
+  --tint-source-share: 60%;
+  --tint-base: black;
+  --tint-paper-share: 15%;
+  --tint-panel-share: 22%;
+  --tint-surface-share: 8%;
+  --tint-line-share: 20%;
+  --tint-muted-depth: 0%;
   --shadow-paper: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 16px -6px rgb(0 0 0 / 0.6);
 }
 
-/* Tokens derived from --accent, recomputed wherever the accent changes.
-   --accent-ink is the accent for text and lines: lightened on dark paper. */
+/* The paper tokens. Untinted, except inside a workspace (.accent-tint),
+   where they take a little of its accent. Text keeps ≥ 4.5:1 on them with
+   every accent (checked for both themes). */
 :root,
+.light-island {
+  --tint-paper: 0%;
+  --tint-panel: 0%;
+  --tint-surface: 0%;
+  --tint-line: 0%;
+  --tint-muted: 0%;
+}
+.accent-tint {
+  --tint-paper: var(--tint-paper-share);
+  --tint-panel: var(--tint-panel-share);
+  --tint-surface: var(--tint-surface-share);
+  --tint-line: var(--tint-line-share);
+  --tint-muted: var(--tint-muted-depth);
+  background: var(--paper);
+}
+
+/* Tokens derived from --accent, recomputed wherever the accent changes.
+   --accent-ink is the accent for text and lines: lightened on dark paper,
+   a touch darker on light paper so it reads on the tinted one. */
+:root,
+.light-island,
 .accent-scope {
-  --accent-ink: color-mix(in oklch, var(--accent) var(--accent-ink-share), white);
+  --accent-ink: color-mix(
+    in oklch,
+    color-mix(in oklch, var(--accent) var(--accent-ink-share), white) var(--accent-ink-depth),
+    black
+  );
+  /* Mixed in OKLab: in OKLCH the paper would jump to the accent's hue. */
+  --tint-source: color-mix(in oklab, var(--accent) var(--tint-source-share), var(--tint-base));
+  --paper: color-mix(in oklab, var(--tint-source) var(--tint-paper), var(--paper-0));
+  --panel: color-mix(in oklab, var(--tint-source) var(--tint-panel), var(--panel-0));
+  --surface: color-mix(in oklab, var(--tint-source) var(--tint-surface), var(--surface-0));
+  --border: color-mix(in oklab, var(--tint-source) var(--tint-line), var(--border-0));
+  --rule: color-mix(in oklab, var(--tint-source) var(--tint-line), var(--rule-0));
+  --field-line: color-mix(in oklab, var(--tint-source) var(--tint-line), var(--field-line-0));
+  --ink-muted: color-mix(in oklab, var(--ink) var(--tint-muted), var(--ink-muted-0));
   --accent-soft: color-mix(in oklch, var(--accent-ink) var(--accent-soft-share), var(--paper));
   --accent-tape: color-mix(in oklch, var(--accent) 30%, transparent);
 }

@@ -15,7 +15,7 @@ export const metadata = { title: "Nuevo espacio" };
 
 export default function NewWorkspacePage() {
   return (
-    <AccentScope accent={DEFAULT_ACCENT} className="min-h-screen">
+    <AccentScope accent={DEFAULT_ACCENT} tint className="min-h-screen">
       <SiteHeader />
       <main className="max-w-xl px-6 pt-2 pb-16 sm:px-12 lg:px-20">
         <Suspense fallback={<div className="h-[28rem]" />}>

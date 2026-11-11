@@ -34,7 +34,7 @@ async function WorkspaceShell({
   ]);
 
   return (
-    <AccentScope accent={access.accent} font={access.font}>
+    <AccentScope accent={access.accent} font={access.font} tint className="min-h-screen">
       <RememberWorkspace organizationId={access.organizationId} />
       {env().REALTIME_URL ? <RealtimeWarmup healthUrl={healthUrlOf(env().REALTIME_URL!)} /> : null}
       <WorkspaceFrame
