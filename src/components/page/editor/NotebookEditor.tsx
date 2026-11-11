@@ -14,6 +14,7 @@ import { syntaxHighlighter } from "@blocknote/code-block";
 import { SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { uploadImage, UploadError } from "@/lib/assets/upload-client";
 import type { FlatPage } from "@/lib/pages/tree";
+import type { LooseBlock } from "@/lib/notion/blocks";
 import { importPdfFile, PdfImportClientError } from "@/lib/pdf/import-client";
 import { EditorContext, type PageEditorContext } from "./editor-context";
 import { PagePreviewLayer } from "./inline/PagePreviewLayer";
@@ -25,7 +26,13 @@ import { pageDictionary, pageSchema, type PageBlock, type PageEditor } from "./s
 import { slashMenuItems } from "./slash-menu";
 import { uploadStore } from "./upload-store";
 
-export type NotebookEditorHandle = { focus: () => void };
+export type NotebookEditorHandle = {
+  focus: () => void;
+  getDocument: () => PageBlock[];
+  /** Swaps every block for these, in one step (one undo, one change for the others). */
+  replaceDocument: (blocks: PageBlock[]) => void;
+  parseMarkdown: (markdown: string) => LooseBlock[];
+};
 
 type Props = {
   organizationId: string;
@@ -46,12 +53,14 @@ type Props = {
   editable: boolean;
   onChange: (blocks: unknown[]) => void;
   onReady?: (handle: NotebookEditorHandle) => void;
+  /** A read-only copy shown beside the real editor (e.g. the AI's proposal): no viewers or importers of its own. */
+  preview?: boolean;
 };
 
 /** BlockNote dressed as a notebook page. Client-only; load it with next/dynamic. */
 export default function NotebookEditor(props: Props) {
   const { organizationId, slug, pageId, pages, ownImagePattern, initialContent, editable, onChange, onReady } = props;
-  const { collaboration } = props;
+  const { collaboration, preview = false } = props;
   const uploadRef = useRef<((blockId: string, file: File) => void) | null>(null);
   const editor: PageEditor = useCreateBlockNote({
     schema: pageSchema,
@@ -119,7 +128,12 @@ export default function NotebookEditor(props: Props) {
   }, [uploadInto]);
 
   useEffect(() => {
-    onReady?.({ focus: () => editor.focus() });
+    onReady?.({
+      focus: () => editor.focus(),
+      getDocument: () => editor.document,
+      replaceDocument: (blocks) => editor.replaceBlocks(editor.document, blocks),
+      parseMarkdown: (markdown) => editor.tryParseMarkdownToBlocks(markdown) as unknown as LooseBlock[],
+    });
   }, [editor, onReady]);
 
   // "/ Importar PDF": the blocks go where the menu was opened.
@@ -185,20 +199,24 @@ export default function NotebookEditor(props: Props) {
           getItems={async (query) => mentionMenuItems(editor, pages, pageId, query)}
         />
       </BlockNoteView>
-      <PagePreviewLayer organizationId={organizationId} pages={pages} />
-      <input
-        ref={pdfInputRef}
-        type="file"
-        accept="application/pdf,.pdf"
-        hidden
-        onChange={(e) => {
-          const file = e.currentTarget.files?.[0];
-          e.currentTarget.value = ""; // so the same file can be picked again
-          if (file) importPdf(file);
-        }}
-      />
-      <PdfImportStatus />
-      <ImageViewerHost />
+      {preview ? null : (
+        <>
+          <PagePreviewLayer organizationId={organizationId} pages={pages} />
+          <input
+            ref={pdfInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            hidden
+            onChange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              e.currentTarget.value = ""; // so the same file can be picked again
+              if (file) importPdf(file);
+            }}
+          />
+          <PdfImportStatus />
+          <ImageViewerHost />
+        </>
+      )}
     </EditorContext>
   );
 }

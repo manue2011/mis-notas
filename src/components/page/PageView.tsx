@@ -8,6 +8,7 @@ import type { NotebookEditorHandle } from "./editor/NotebookEditor";
 import { PageMeta } from "./PageMeta";
 import { PageTitle } from "./PageTitle";
 import { RealtimePageView, type RealtimeConfig } from "./realtime/RealtimePageView";
+import { TidyPage } from "./tidy/TidyPage";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 
 // ProseMirror needs the DOM, so the editor only renders in the browser.
@@ -30,6 +31,8 @@ type Props = {
   updatedAt: string;
   updatedByName: string | null;
   editable: boolean;
+  /** "Ordenar página con IA" is offered (AI on, and the person may edit). */
+  canTidy: boolean;
 };
 
 const priority: SaveStatus[] = ["error", "saving", "pending", "saved", "idle"];
@@ -43,6 +46,7 @@ export function PageView(props: Props) {
 function SavedPageView(props: Props) {
   const { organizationId, slug, pageId, pages, ownImagePattern, title, content, updatedAt, updatedByName, editable } =
     props;
+  const { canTidy } = props;
   const editorRef = useRef<NotebookEditorHandle | null>(null);
 
   const titleSave = useAutosave(
@@ -76,6 +80,12 @@ function SavedPageView(props: Props) {
         status={status}
         error={titleSave.error ?? contentSave.error}
       />
+      {canTidy && editable ? (
+        <TidyPage
+          {...{ organizationId, slug, pageId, pages, ownImagePattern, title }}
+          editorRef={editorRef}
+        />
+      ) : null}
       <div className="mt-8">
         <NotebookEditor
           organizationId={organizationId}

@@ -1,12 +1,14 @@
 import {
   type AnyPgColumn,
   customType,
+  date,
   doublePrecision,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -152,4 +154,17 @@ export const asset = pgTable(
     orphanedAt: timestamp("orphaned_at", { withTimezone: true }),
   },
   (t) => [index("asset_page_idx").on(t.pageId)],
+);
+
+// How many times each person used the AI on each day (UTC), for the daily limit.
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    uses: integer("uses").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })],
 );

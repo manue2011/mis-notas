@@ -43,6 +43,13 @@
       "when": 1793790565700,
       "tag": "0005_page_yjs_state",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794433770569,
+      "tag": "0006_ai_usage",
+      "breakpoints": true
     }
   ]
 }

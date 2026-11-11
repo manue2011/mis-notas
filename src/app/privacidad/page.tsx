@@ -51,6 +51,10 @@ export default function PrivacyPage() {
             necesario para cumplir lo que aceptas al registrarte (artículo 6.1.b del RGPD).
           </li>
           <li>
+            <strong>Ordenar una página con IA</strong>, solo cuando tú lo pides: forma parte del servicio que usas en ese
+            momento (artículo 6.1.b del RGPD). Contamos cuántas veces la usas al día, para el límite diario.
+          </li>
+          <li>
             <strong>Mantener Libreta segura</strong> (sesiones, límite de intentos, bloqueo de cuentas): interés legítimo
             en proteger las cuentas y el servicio (artículo 6.1.f del RGPD).
           </li>
@@ -79,6 +83,11 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Google</strong> (Estados Unidos): solo si eliges entrar con Google.
+          </li>
+          <li>
+            <strong>Groq</strong> (Estados Unidos): solo cuando pulsas «Ordenar página con IA». Recibe el título y el
+            texto de esa página (no las imágenes ni tu nombre o correo) para devolver una versión ordenada, y no lo usa
+            para entrenar sus modelos.
           </li>
         </LegalList>
         <p>

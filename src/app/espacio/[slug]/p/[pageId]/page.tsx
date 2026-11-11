@@ -8,7 +8,7 @@ import { SubpageList } from "@/components/page/SubpageList";
 import { TrashedPageNotice } from "@/components/trash/TrashedPageNotice";
 import { TopBar } from "@/components/workspace/TopBar";
 import { requireUser } from "@/lib/auth/session";
-import { env, realtimeEnabled } from "@/lib/env";
+import { aiEnabled, env, realtimeEnabled } from "@/lib/env";
 import { screenshotUrlPattern } from "@/lib/pages/content";
 import { getPage, listPages } from "@/lib/pages/queries";
 import { getTrashedPageTitle } from "@/lib/pages/trash";
@@ -110,6 +110,7 @@ async function PageScreen({ params }: { params: Params }) {
         updatedAt={page.updatedAt.toISOString()}
         updatedByName={page.updatedByName}
         editable={canMove}
+        canTidy={canMove && aiEnabled()}
       />
       <SubpageList
         slug={access.slug}

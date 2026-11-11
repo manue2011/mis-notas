@@ -10,6 +10,7 @@ import type { FlatPage } from "@/lib/pages/tree";
 import type { NotebookEditorHandle } from "../editor/NotebookEditor";
 import { PageMeta } from "../PageMeta";
 import { PageTitle } from "../PageTitle";
+import { TidyPage } from "../tidy/TidyPage";
 import type { SessionState } from "./session-store";
 import { usePageSession } from "./usePageSession";
 import { useSharedTitle } from "./useSharedTitle";
@@ -33,6 +34,7 @@ type Props = {
   editable: boolean;
   ownImagePattern: string | null;
   realtime: RealtimeConfig;
+  canTidy: boolean;
 };
 
 const noop = () => {};
@@ -58,7 +60,7 @@ function describe(state: SessionState | null): { text: string; tone?: "error" } 
  * empty document that would then be merged with the real one.
  */
 export function RealtimePageView(props: Props) {
-  const { organizationId, slug, pageId, pages, title, content, editable, ownImagePattern, realtime } = props;
+  const { organizationId, slug, pageId, pages, title, content, editable, ownImagePattern, realtime, canTidy } = props;
   const { session, state } = usePageSession({ url: realtime.url, organizationId, pageId });
   const editorRef = useRef<NotebookEditorHandle | null>(null);
   const handleReady = useCallback((handle: NotebookEditorHandle) => {
@@ -92,6 +94,9 @@ export function RealtimePageView(props: Props) {
         status="idle"
         error={null}
       />
+      {live && canEdit && canTidy ? (
+        <TidyPage {...{ organizationId, slug, pageId, pages, ownImagePattern, title }} editorRef={editorRef} />
+      ) : null}
       <div className="mt-8">
         {live ? (
           <NotebookEditor

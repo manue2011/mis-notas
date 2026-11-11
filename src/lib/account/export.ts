@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { account, asset, member, organization, page, session, user } from "@/db/schema";
+import { account, aiUsage, asset, member, organization, page, session, user } from "@/db/schema";
 
 // "Descargar mis datos" (GDPR access and portability): everything Libreta
 // keeps about one person, as plain JSON. Secrets (password hash, tokens)
@@ -14,7 +14,7 @@ export async function exportUserData(userId: string) {
     .where(eq(user.id, userId));
   if (!me) return null;
 
-  const [signIns, memberships, sessions] = await Promise.all([
+  const [signIns, memberships, sessions, aiUses] = await Promise.all([
     db.select({ provider: account.providerId, createdAt: account.createdAt }).from(account).where(eq(account.userId, userId)),
     db
       .select({ organizationId: member.organizationId, workspace: organization.name, role: member.role, joinedAt: member.createdAt })
@@ -25,6 +25,7 @@ export async function exportUserData(userId: string) {
       .select({ startedAt: session.createdAt, expiresAt: session.expiresAt, ipAddress: session.ipAddress, userAgent: session.userAgent })
       .from(session)
       .where(eq(session.userId, userId)),
+    db.select({ day: aiUsage.day, uses: aiUsage.uses }).from(aiUsage).where(eq(aiUsage.userId, userId)),
   ]);
 
   // Only what's in workspaces you're still part of: the rest isn't yours to take.
@@ -58,5 +59,6 @@ export async function exportUserData(userId: string) {
     pagesYouCreated: pages,
     imagesYouUploaded: images,
     activeSessions: sessions,
+    aiTidyUsesPerDay: aiUses,
   };
 }

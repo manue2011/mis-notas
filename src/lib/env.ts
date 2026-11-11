@@ -23,6 +23,8 @@ const envSchema = z
     REALTIME_URL: z.url().optional(),
     // Trimmed: a space pasted by mistake must not break the signatures.
     REALTIME_SECRET: z.string().trim().min(32).optional(),
+    // "Ordenar esta página" (Groq) is on only when set.
+    GROQ_API_KEY: optional,
   })
   .refine((e) => !e.GOOGLE_CLIENT_ID === !e.GOOGLE_CLIENT_SECRET, {
     path: ["GOOGLE_CLIENT_SECRET"],
@@ -67,6 +69,10 @@ function isUrl(value: string | undefined): boolean {
 
 export function realtimeEnabled(): boolean {
   return Boolean(env().REALTIME_URL);
+}
+
+export function aiEnabled(): boolean {
+  return Boolean(env().GROQ_API_KEY);
 }
 
 export function googleEnabled(): boolean {
