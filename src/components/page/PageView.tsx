@@ -31,7 +31,7 @@ type Props = {
   updatedAt: string;
   updatedByName: string | null;
   editable: boolean;
-  /** "Ordenar página con IA" is offered (AI on, and the person may edit). */
+  /** "Ordenar con IA" is offered (AI on, and the person may edit). */
   canTidy: boolean;
 };
 

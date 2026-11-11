@@ -1,10 +1,10 @@
 import { finishBlocks, type LooseBlock, type PageTarget } from "@/lib/notion/blocks";
 import { parseOutline } from "@/lib/notion/outline";
-import type { TidySource } from "./tidy-markdown";
+import { TOGGLE, type TidySource } from "./tidy-markdown";
 
 // The AI's Markdown back into blocks, in the browser (BlockNote parses it):
 // the same reading as a Notion import, then the markers become the blocks
-// and page links they stood for.
+// and page links they stood for, and "- ▸ …" items toggles again.
 
 type Parse = (markdown: string) => LooseBlock[];
 
@@ -15,6 +15,28 @@ function withoutIds(blocks: LooseBlock[]): LooseBlock[] {
     delete copy.id;
     if (block.children?.length) copy.children = withoutIds(block.children);
     return copy;
+  });
+}
+
+type Inline = { type: string; text?: string };
+
+/** A bullet (or a line) starting with ▸ was a toggle; it is one again, without the ▸. */
+function restoreToggles(blocks: LooseBlock[]): LooseBlock[] {
+  return blocks.map((block) => {
+    const children = block.children?.length ? restoreToggles(block.children) : block.children;
+    const [first, ...rest] = Array.isArray(block.content) ? (block.content as Inline[]) : [];
+    const toggle =
+      (block.type === "bulletListItem" || block.type === "paragraph") &&
+      first?.type === "text" &&
+      first.text?.trimStart().startsWith(TOGGLE.trim());
+    if (!toggle) return { ...block, ...(children ? { children } : {}) };
+    const text = first.text!.trimStart().slice(TOGGLE.trim().length).trimStart();
+    return {
+      ...block,
+      type: "toggleListItem",
+      content: text ? [{ ...first, text }, ...rest] : rest,
+      ...(children ? { children } : {}),
+    };
   });
 }
 
@@ -34,5 +56,5 @@ export function tidyBlocks(markdown: string, source: TidySource, parse: Parse): 
       return typeof props?.pageId === "string" ? ({ ...props } as PageTarget) : null;
     },
   });
-  return withoutIds(blocks);
+  return withoutIds(restoreToggles(blocks));
 }

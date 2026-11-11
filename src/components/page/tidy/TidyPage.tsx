@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition, type RefObject } from "react";
-import { ListTree } from "lucide-react";
+import { WandSparkles } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { tidyPageAction } from "@/lib/ai/actions";
 import { tidyBlocks } from "@/lib/ai/tidy-client";
@@ -74,7 +74,7 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
   }
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       {undo ? (
         <p role="status" className="flex flex-wrap items-center gap-x-2 text-ink-muted">
           Página ordenada.
@@ -87,16 +87,23 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
           </button>
         </p>
       ) : (
-        <button
-          type="button"
-          onClick={ask}
-          disabled={pending}
-          aria-busy={pending || undefined}
-          className="-ml-2 inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-ink-muted hover:bg-panel hover:text-ink disabled:cursor-wait"
-        >
-          <ListTree size={16} strokeWidth={1.5} aria-hidden />
-          {pending ? "Ordenando la página…" : "Ordenar página con IA"}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={ask}
+            disabled={pending}
+            aria-busy={pending || undefined}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-4 font-medium text-on-accent shadow-paper transition-[filter] duration-150 hover:brightness-110 active:brightness-95 disabled:cursor-wait disabled:opacity-80"
+          >
+            <WandSparkles size={17} strokeWidth={1.5} aria-hidden className={pending ? "motion-safe:animate-pulse" : undefined} />
+            {pending ? "Ordenando la página…" : "Ordenar con IA"}
+          </button>
+          {pending ? null : (
+            <span aria-hidden className="font-hand text-xl leading-none text-ink-muted">
+              títulos, listas y pasos en un clic
+            </span>
+          )}
+        </>
       )}
       <FormAlert message={error} />
       {proposal ? (

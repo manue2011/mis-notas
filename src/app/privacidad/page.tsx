@@ -85,7 +85,7 @@ export default function PrivacyPage() {
             <strong>Google</strong> (Estados Unidos): solo si eliges entrar con Google.
           </li>
           <li>
-            <strong>Groq</strong> (Estados Unidos): solo cuando pulsas «Ordenar página con IA». Recibe el título y el
+            <strong>Groq</strong> (Estados Unidos): solo cuando pulsas «Ordenar con IA». Recibe el título y el
             texto de esa página (no las imágenes ni tu nombre o correo) para devolver una versión ordenada, y no lo usa
             para entrenar sus modelos.
           </li>

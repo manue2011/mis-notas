@@ -1,7 +1,8 @@
 // "Ordenar esta página": the page goes to the AI as Markdown and comes back
 // as Markdown. What the AI must not rewrite (pictures, sticky notes, tables,
-// code, toggles) travels as a marker line it may only move; links to other
-// pages travel as Markdown links whose address is a marker. Pure functions,
+// code) travels as a marker line it may only move; links to other pages
+// travel as Markdown links whose address is a marker; a toggle is a list item
+// starting with TOGGLE, its contents indented under it. Pure functions,
 // shared by the server action and the browser.
 
 type Inline = {
@@ -33,9 +34,11 @@ export type TidySource = {
 export const blockMarker = (n: number) => `LIBRETABLOQUE${n}X`;
 export const linkMarker = (n: number) => `LIBRETAENLACE${n}X`;
 export const BLOCK_MARKER = /LIBRETABLOQUE\d+X/g;
+/** Starts a toggle's line: "- ▸ Title". */
+export const TOGGLE = "▸ ";
 
-const TEXT_TYPES = new Set(["paragraph", "heading", "bulletListItem", "numberedListItem", "checkListItem", "quote"]);
-const LIST_TYPES = new Set(["bulletListItem", "numberedListItem", "checkListItem"]);
+const LIST_TYPES = new Set(["bulletListItem", "numberedListItem", "checkListItem", "toggleListItem"]);
+const TEXT_TYPES = new Set([...LIST_TYPES, "paragraph", "heading", "quote"]);
 
 const escapeText = (text: string) => text.replace(/([\\*_`[\]])/g, "\\$1");
 /** A line that would read as a heading, quote or list item when it isn't one. */
@@ -73,6 +76,26 @@ function inlineMarkdown(items: unknown, links: Map<string, Inline>): string {
     .replace(/\n/g, " ");
 }
 
+/** What starts a block's line: "## ", "- ", "3. ", "- [x] ", "- ▸ ", "> " or nothing. */
+function linePrefix(block: TidyBlock, numbered: number): string {
+  switch (block.type) {
+    case "heading":
+      return `${"#".repeat(Math.min(Math.max(Number(block.props?.level) || 1, 1), 3))} `;
+    case "bulletListItem":
+      return "- ";
+    case "toggleListItem":
+      return `- ${TOGGLE}`;
+    case "numberedListItem":
+      return `${numbered}. `;
+    case "checkListItem":
+      return `- [${block.props?.checked ? "x" : " "}] `;
+    case "quote":
+      return "> ";
+    default:
+      return "";
+  }
+}
+
 /** The page as Markdown, with markers for what the AI must keep as it is. */
 export function toTidyMarkdown(document: TidyBlock[]): TidySource {
   const blocks = new Map<string, TidyBlock>();
@@ -90,19 +113,7 @@ export function toTidyMarkdown(document: TidyBlock[]): TidySource {
         continue;
       }
       const text = inlineMarkdown(block.content, links);
-      const level = Number(block.props?.level) || 1;
-      const prefix =
-        block.type === "heading"
-          ? `${"#".repeat(Math.min(Math.max(level, 1), 3))} `
-          : block.type === "bulletListItem"
-            ? "- "
-            : block.type === "numberedListItem"
-              ? `${numbered}. `
-              : block.type === "checkListItem"
-                ? `- [${block.props?.checked ? "x" : " "}] `
-                : block.type === "quote"
-                  ? "> "
-                  : "";
+      const prefix = linePrefix(block, numbered);
       // A list ends with a blank line before whatever follows it.
       if (!LIST_TYPES.has(block.type) && lines.length && lines[lines.length - 1] !== "") lines.push("");
       lines.push(indent + prefix + (prefix ? text : escapeStart(text)));
@@ -149,15 +160,42 @@ function words(markdown: string): string[] {
 
 /**
  * The numbers in the text (dates, amounts, references): the data a tidier
- * page must keep. List numbering doesn't count, and 1.284 is 1284.
+ * page must keep. Enumerations ("1)", "2." starting a line, heading or list
+ * item) don't count, and 1.284 is 1284.
  */
 function numbers(markdown: string): string[] {
   return (
     withoutMarkers(markdown)
-      .replace(/^[ \t]*\d+[.)][ \t]/gm, "")
+      .replace(/^([ \t]*(?:#{1,6}[ \t]+|[-*+][ \t]+|>[ \t]*)*)\d{1,2}[.)](?=\s)/gm, "$1")
       .match(/\d+(?:[.,]\d+)*/g)
       ?.map((n) => n.replace(/[.,]/g, "")) ?? []
   );
+}
+
+/** At most `max` single-letter edits apart (a typo the AI fixed). */
+function closeTo(a: string, b: string, max: number): boolean {
+  if (Math.abs(a.length - b.length) > max) return false;
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    if (Math.min(...row) > max) return false;
+    previous = row;
+  }
+  return previous[b.length] <= max;
+}
+
+/** Share of the page's different words still there, a word with a typo fixed included. */
+function distinctKept(before: string[], after: string[]): number {
+  const unique = [...new Set(before)];
+  if (!unique.length) return 1;
+  const there = new Set(after);
+  const kept = unique.filter(
+    (word) => there.has(word) || (word.length >= 5 && [...there].some((other) => closeTo(word, other, 2))),
+  );
+  return kept.length / unique.length;
 }
 
 /**
@@ -171,12 +209,15 @@ function ownLines(markdown: string): string {
     .flatMap((line) => {
       if (!line.includes("LIBRETABLOQUE")) return [line];
       const indent = /^[ \t]*/.exec(line)![0];
-      // A marker the AI made a list item, heading or quote of.
-      const bare = line.replace(/^[ \t]*(?:[-*+]|\d+[.)]|#{1,6}|>)[ \t]+(?=LIBRETABLOQUE\d+X)/, indent);
+      const bare = line
+        // A marker the AI made a list item, heading or quote of…
+        .replace(/^[ \t]*(?:[-*+]|\d+[.)]|#{1,6}|>)[ \t]+(?=[`*_]*LIBRETABLOQUE\d+X)/, indent)
+        // …or wrapped in code, bold or italics.
+        .replace(/[`*_]+(LIBRETABLOQUE\d+X)[`*_]+/g, "$1");
       return bare
         .split(/(LIBRETABLOQUE\d+X)/)
         .map((part) => part.trim())
-        .filter(Boolean)
+        .filter((part) => part && !/^[`*_]+$/.test(part))
         .flatMap((part) => ["", indent + part, ""]);
     })
     .join("\n")
@@ -190,8 +231,10 @@ export type TidyCheck = { ok: true; markdown: string } | { ok: false; reason: "d
 const MIN_DISTINCT_KEPT = 0.85;
 /** Share of all its words, repeats included: catches a page cut down to one of each. */
 const MIN_ALL_KEPT = 0.5;
-/** Share of its numbers, repeats included. */
+/** Share of its numbers of two or more digits (dates, amounts, codes), repeats included. */
 const MIN_NUMBERS_KEPT = 0.98;
+/** Single digits are often counts the AI writes out ("3 ficheros" → "tres ficheros"): one may go, or a quarter. */
+const digitsMayGo = (count: number) => Math.max(1, Math.floor(count / 4));
 /** How much longer it may get (headings). */
 const MAX_GROWTH = 1.6;
 
@@ -223,10 +266,14 @@ export function checkTidyMarkdown(source: TidySource, answer: string): TidyCheck
 
   const before = words(source.markdown);
   const after = words(markdown);
+  const [numbersBefore, numbersAfter] = [numbers(source.markdown), numbers(markdown)];
+  const long = (n: string) => n.length > 1;
+  const short = (n: string) => n.length === 1;
   const dropped =
-    keptShare([...new Set(before)], [...new Set(after)]) < MIN_DISTINCT_KEPT ||
+    distinctKept(before, after) < MIN_DISTINCT_KEPT ||
     keptShare(before, after) < MIN_ALL_KEPT ||
-    keptShare(numbers(source.markdown), numbers(markdown)) < MIN_NUMBERS_KEPT;
+    keptShare(numbersBefore.filter(long), numbersAfter.filter(long)) < MIN_NUMBERS_KEPT ||
+    countMissing(numbersBefore.filter(short), numbersAfter.filter(short)) > digitsMayGo(numbersBefore.filter(short).length);
   if (dropped) return { ok: false, reason: "dropped" };
   if (after.length > before.length * MAX_GROWTH + 40) return { ok: false, reason: "invented" };
   return { ok: true, markdown };
@@ -235,15 +282,18 @@ export function checkTidyMarkdown(source: TidySource, answer: string): TidyCheck
 /** How much of `before` is still in `after`, counting repeats (a line written twice must stay twice). */
 function keptShare(before: string[], after: string[]): number {
   if (!before.length) return 1;
+  return (before.length - countMissing(before, after)) / before.length;
+}
+
+/** How many of `before` aren't in `after`, counting repeats. */
+function countMissing(before: string[], after: string[]): number {
   const left = new Map<string, number>();
   for (const word of after) left.set(word, (left.get(word) ?? 0) + 1);
-  let kept = 0;
+  let lost = 0;
   for (const word of before) {
     const n = left.get(word) ?? 0;
-    if (n > 0) {
-      kept++;
-      left.set(word, n - 1);
-    }
+    if (n > 0) left.set(word, n - 1);
+    else lost++;
   }
-  return kept / before.length;
+  return lost;
 }
