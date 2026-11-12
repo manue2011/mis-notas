@@ -104,6 +104,10 @@ export default function PrivacyPage() {
             Las páginas borradas quedan en la papelera del espacio hasta que alguien la vacía o las restaura.
           </li>
           <li>
+            El historial de cada página (cómo estaba tras los cambios de cada persona, y quién los hizo) se guarda 30
+            días, y como mucho 50 versiones por página. Si eliminas tu cuenta, tus versiones se quedan sin tu nombre.
+          </li>
+          <li>
             Si eliminas tu cuenta, la borramos al momento; las copias de seguridad de la base de datos desaparecen solas
             en pocos días.
           </li>

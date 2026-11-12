@@ -6,6 +6,7 @@ import { page, user } from "@/db/schema";
 import { sweepPageAssets } from "@/lib/assets/sweep";
 import { serverPageSchema } from "./schema";
 import { dropForeignScreenshots, extractSearchText, MAX_TITLE_LENGTH } from "@/lib/pages/content";
+import { recordPageVersion } from "@/lib/pages/versions";
 import { CONTENT_FRAGMENT, TITLE_TEXT } from "@/lib/realtime/doc";
 import { env } from "./env";
 
@@ -72,6 +73,11 @@ export async function storePage(doc: Y.Doc, { organizationId, pageId }: PageRef,
     cloudName: env().CLOUDINARY_CLOUD_NAME,
   });
   const title = doc.getText(TITLE_TEXT).toString().trim().slice(0, MAX_TITLE_LENGTH);
+
+  // The history is a nicety: if it fails, the page is still saved.
+  await recordPageVersion({ organizationId, pageId, userId, title, content: blocks }).catch((error) =>
+    console.error("[realtime] page version failed:", error instanceof Error ? error.message : error),
+  );
 
   await db
     .update(page)

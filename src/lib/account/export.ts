@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { account, aiUsage, asset, member, organization, page, session, user } from "@/db/schema";
+import { account, aiUsage, asset, member, organization, page, pageVersion, session, user } from "@/db/schema";
 
 // "Descargar mis datos" (GDPR access and portability): everything Libreta
 // keeps about one person, as plain JSON. Secrets (password hash, tokens)
@@ -30,7 +30,7 @@ export async function exportUserData(userId: string) {
 
   // Only what's in workspaces you're still part of: the rest isn't yours to take.
   const workspaceIds = memberships.map((m) => m.organizationId);
-  const [pages, images] = workspaceIds.length
+  const [pages, images, versions] = workspaceIds.length
     ? await Promise.all([
         db
           .select({
@@ -49,8 +49,19 @@ export async function exportUserData(userId: string) {
           .select({ organizationId: asset.organizationId, pageId: asset.pageId, url: asset.url, uploadedAt: asset.createdAt })
           .from(asset)
           .where(and(eq(asset.uploadedBy, userId), inArray(asset.organizationId, workspaceIds))),
+        db
+          .select({
+            pageId: pageVersion.pageId,
+            organizationId: pageVersion.organizationId,
+            kind: pageVersion.kind,
+            title: pageVersion.title,
+            content: pageVersion.content,
+            savedAt: pageVersion.savedAt,
+          })
+          .from(pageVersion)
+          .where(and(eq(pageVersion.editedBy, userId), inArray(pageVersion.organizationId, workspaceIds))),
       ])
-    : [[], []];
+    : [[], [], []];
 
   return {
     exportedAt: new Date().toISOString(),
@@ -58,6 +69,7 @@ export async function exportUserData(userId: string) {
     workspaces: memberships,
     pagesYouCreated: pages,
     imagesYouUploaded: images,
+    pageVersionsYouSaved: versions,
     activeSessions: sessions,
     aiTidyUsesPerDay: aiUses,
   };

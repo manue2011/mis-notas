@@ -50,6 +50,13 @@
       "when": 1794433770569,
       "tag": "0006_ai_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794522779953,
+      "tag": "0007_page_version",
+      "breakpoints": true
     }
   ]
 }

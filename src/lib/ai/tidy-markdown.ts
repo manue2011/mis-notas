@@ -315,6 +315,8 @@ export function checkTidyMarkdown(source: TidySource, answer: string): TidyCheck
     .trim()
     .replace(/^```(?:markdown|md)?\s*\n([\s\S]*?)\n```$/i, "$1")
     .replace(/\r\n?/g, "\n")
+    // The header of the message it was sent (tidyUserMessage), echoed back.
+    .replace(/^[ \t#*_]*t[ií]tulo de la p[aá]gina:[^\n]*\n*/i, "")
     .trim();
   if (!markdown) return { ok: false, reason: "empty" };
 

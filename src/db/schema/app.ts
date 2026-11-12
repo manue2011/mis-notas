@@ -168,3 +168,28 @@ export const aiUsage = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.day] })],
 );
+
+export const pageVersionKind = pgEnum("page_version_kind", ["edit", "ai", "restore"]);
+
+// The page's history: what it looked like after each stretch of editing by
+// one person (see src/lib/pages/versions.ts), kept for a while.
+export const pageVersion = pgTable(
+  "page_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    kind: pageVersionKind("kind").notNull().default("edit"),
+    title: text("title").notNull().default(""),
+    content: jsonb("content").$type<unknown[]>().notNull().default(sql`'[]'::jsonb`),
+    editedBy: text("edited_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // The last save folded into this version.
+    savedAt: timestamp("saved_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("page_version_page_idx").on(t.pageId, t.savedAt)],
+);

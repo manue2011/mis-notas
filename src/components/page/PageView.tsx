@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { savePageContentAction, savePageTitleAction } from "@/lib/pages/actions";
 import type { FlatPage } from "@/lib/pages/tree";
 import type { NotebookEditorHandle } from "./editor/NotebookEditor";
+import { PageHistory } from "./history/PageHistory";
 import { PageMeta } from "./PageMeta";
 import { PageTitle } from "./PageTitle";
 import { RealtimePageView, type RealtimeConfig } from "./realtime/RealtimePageView";
@@ -79,6 +80,13 @@ function SavedPageView(props: Props) {
         updatedAt={lastSaved}
         status={status}
         error={titleSave.error ?? contentSave.error}
+        history={
+          <PageHistory
+            {...{ organizationId, slug, pageId, pages, ownImagePattern }}
+            editorRef={editorRef}
+            canRestore={editable}
+          />
+        }
       />
       {canTidy && editable ? (
         <TidyPage

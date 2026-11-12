@@ -26,6 +26,7 @@
 :root {
   color-scheme: light;
   --sticky: #f2de8f;
+  --version-mark-share: 70%; /* page history highlighter strength */
   --photo: #ffffff;
   --code-bg: #2a251f;
   --on-accent: #ffffff;
@@ -63,6 +64,7 @@
     --error: #e5836b;
     --on-error: #1e1a16;
     --sticky: #d9c47a;
+    --version-mark-share: 30%;
     --photo: #ece6da;
     --code-bg: #14110e;
     --accent-ink-share: 50%;
@@ -91,6 +93,7 @@
   --error: #e5836b;
   --on-error: #1e1a16;
   --sticky: #d9c47a;
+  --version-mark-share: 30%;
   --photo: #ece6da;
   --code-bg: #14110e;
   --accent-ink-share: 50%;
@@ -212,6 +215,12 @@ body {
   background-color: var(--panel);
   background-image: radial-gradient(var(--field-line) 1px, transparent 1.2px);
   background-size: 18px 18px;
+}
+
+/* Page history: highlighter colours for new and changed blocks (inside the workspace, where --accent is). */
+.version-preview {
+  --version-added: color-mix(in oklch, var(--accent) 22%, transparent);
+  --version-changed: color-mix(in oklch, var(--sticky) var(--version-mark-share), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

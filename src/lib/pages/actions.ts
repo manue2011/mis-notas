@@ -12,6 +12,7 @@ import type { Permissions } from "@/lib/auth/permissions";
 import { env } from "@/lib/env";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 import { extractSearchText, pageContentSchema, pageTitleSchema } from "./content";
+import { recordPageVersion } from "./versions";
 
 export type PageActionResult = { ok: true; savedAt: string } | { ok: false; error: string };
 
@@ -161,6 +162,17 @@ async function updatePage(
   } catch (error) {
     if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message };
     throw error;
+  }
+
+  if (values.title !== undefined || values.content !== undefined) {
+    // The history is a nicety: if it fails, the page is still saved.
+    await recordPageVersion({
+      organizationId: access.organizationId,
+      pageId: ids.pageId,
+      userId: access.userId,
+      title: values.title,
+      content: values.content,
+    }).catch((error) => console.error("[pages] page version failed:", error instanceof Error ? error.message : error));
   }
 
   const savedAt = new Date();

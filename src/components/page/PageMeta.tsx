@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { SaveStatus } from "./useAutosave";
 
 const relative = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
@@ -28,9 +28,11 @@ type Props = {
   updatedAt: string;
   status: SaveStatus;
   error: string | null;
+  /** The "Historial" button, at the end of the line. */
+  history?: ReactNode;
 };
 
-export function PageMeta({ liveStatus, editorName, updatedAt, status, error }: Props) {
+export function PageMeta({ liveStatus, editorName, updatedAt, status, error, history }: Props) {
   // Relative time depends on the clock, so it's only shown after hydration.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -55,6 +57,7 @@ export function PageMeta({ liveStatus, editorName, updatedAt, status, error }: P
           {status === "error" ? `· ${error}` : statusText[status] ? `· ${statusText[status]}` : ""}
         </span>
       )}
+      {history}
     </p>
   );
 }

@@ -7,4 +7,4 @@ export const CONTROLLER = {
 } as const;
 
 /** When the legal texts last changed (shown on both pages). */
-export const LEGAL_UPDATED = "11 de noviembre de 2026";
+export const LEGAL_UPDATED = "12 de noviembre de 2026";

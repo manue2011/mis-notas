@@ -8,6 +8,7 @@ import { personColor } from "@/lib/realtime/colors";
 import { CONTENT_FRAGMENT } from "@/lib/realtime/doc";
 import type { FlatPage } from "@/lib/pages/tree";
 import type { NotebookEditorHandle } from "../editor/NotebookEditor";
+import { PageHistory } from "../history/PageHistory";
 import { PageMeta } from "../PageMeta";
 import { PageTitle } from "../PageTitle";
 import { TidyPage } from "../tidy/TidyPage";
@@ -93,6 +94,13 @@ export function RealtimePageView(props: Props) {
         updatedAt={props.updatedAt}
         status="idle"
         error={null}
+        history={
+          <PageHistory
+            {...{ organizationId, slug, pageId, pages, ownImagePattern }}
+            editorRef={editorRef}
+            canRestore={Boolean(live && canEdit)}
+          />
+        }
       />
       {live && canEdit && canTidy ? (
         <TidyPage {...{ organizationId, slug, pageId, pages, ownImagePattern, title }} editorRef={editorRef} />

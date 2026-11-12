@@ -5,6 +5,7 @@ import { WandSparkles } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { tidyPageAction } from "@/lib/ai/actions";
 import { tidyBlocks } from "@/lib/ai/tidy-client";
+import { recordPageVersionAction } from "@/lib/pages/version-actions";
 import { toTidyMarkdown, type TidyBlock } from "@/lib/ai/tidy-markdown";
 import type { NotebookEditorHandle } from "../editor/NotebookEditor";
 import type { PageBlock } from "../editor/schema";
@@ -62,7 +63,10 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
     // Someone (or you, in another tab) wrote while the AI worked.
     if (!changedMeanwhile && !same(editor.getDocument(), proposal.before)) return setChangedMeanwhile(true);
     editor.replaceDocument(proposal.after);
-    setUndo({ before: proposal.before, after: editor.getDocument() });
+    const after = editor.getDocument();
+    // Shown as "ordenó con IA" in the history; the editor's own save folds into it.
+    void recordPageVersionAction(previewProps.organizationId, previewProps.pageId, "ai", after);
+    setUndo({ before: proposal.before, after });
     setProposal(null);
   }
 
@@ -70,6 +74,7 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
     const editor = editorRef.current;
     if (!editor || !undo) return;
     editor.replaceDocument(undo.before);
+    void recordPageVersionAction(previewProps.organizationId, previewProps.pageId, "restore", editor.getDocument());
     setUndo(null);
   }
 
