@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { FlatPage } from "@/lib/pages/tree";
 import type { PageBlock } from "../editor/schema";
+import { BeforeAfterSwitch, type TidyView } from "./BeforeAfterSwitch";
+import { TidyChanges } from "./TidyChanges";
 
 const NotebookEditor = dynamic(() => import("../editor/NotebookEditor"), {
   ssr: false,
@@ -18,7 +20,13 @@ export type TidyPreviewProps = {
   pageId: string;
   pages: FlatPage[];
   ownImagePattern: string | null;
-  blocks: PageBlock[];
+  /** The page as it is, and as the AI would leave it. */
+  before: PageBlock[];
+  after: PageBlock[];
+  /** What the AI says it changed. */
+  changes: string[];
+  /** Words of the page it may have left out. */
+  missing: string[];
   /** Uses left today, after this one. */
   remaining: number;
   /** The page changed while the AI worked: applying would undo those changes. */
@@ -29,9 +37,20 @@ export type TidyPreviewProps = {
 
 const noop = () => {};
 
-/** The AI's version of the page, read-only, to apply or throw away. */
-export function TidyPreview({ blocks, remaining, changedMeanwhile, onApply, onClose, ...page }: TidyPreviewProps) {
+/** The AI's version of the page, read-only, to compare with the page as it is and apply or throw away. */
+export function TidyPreview({
+  before,
+  after,
+  changes,
+  missing,
+  remaining,
+  changedMeanwhile,
+  onApply,
+  onClose,
+  ...page
+}: TidyPreviewProps) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const [view, setView] = useState<TidyView>("after");
 
   useEffect(() => {
     dialog.current?.showModal();
@@ -53,6 +72,7 @@ export function TidyPreview({ blocks, remaining, changedMeanwhile, onApply, onCl
             La IA puede equivocarse: échale un vistazo antes de aplicarlo. Las imágenes, notas, tablas y código no los
             toca, solo los cambia de sitio.
           </p>
+          <TidyChanges changes={changes} missing={missing} />
         </div>
         <button
           type="button"
@@ -64,8 +84,19 @@ export function TidyPreview({ blocks, remaining, changedMeanwhile, onApply, onCl
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 md:px-8">
-        <NotebookEditor {...page} initialContent={blocks} editable={false} onChange={noop} preview />
+      <div className="px-5 pt-3 md:px-8">
+        <BeforeAfterSwitch value={view} onChange={setView} />
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-6 md:px-8">
+        {/* Keyed, so switching builds the other version afresh. */}
+        <NotebookEditor
+          key={view}
+          {...page}
+          initialContent={view === "after" ? after : before}
+          editable={false}
+          onChange={noop}
+          preview
+        />
       </div>
 
       <footer className="flex flex-wrap items-center gap-3 border-t border-dashed border-border px-5 py-3 md:px-8">

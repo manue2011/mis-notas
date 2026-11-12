@@ -2,8 +2,9 @@
 // as Markdown. What the AI must not rewrite (pictures, sticky notes, tables,
 // code) travels as a marker line it may only move; links to other pages
 // travel as Markdown links whose address is a marker; a toggle is a list item
-// starting with TOGGLE, its contents indented under it. Pure functions,
-// shared by the server action and the browser.
+// starting with TOGGLE, its contents indented under it. The AI may add
+// sticky notes ("> [!nota] …") and ends its answer with what it changed.
+// Pure functions, shared by the server action and the browser.
 
 type Inline = {
   type: string;
@@ -34,6 +35,10 @@ export type TidySource = {
 export const blockMarker = (n: number) => `LIBRETABLOQUE${n}X`;
 export const linkMarker = (n: number) => `LIBRETAENLACE${n}X`;
 export const BLOCK_MARKER = /LIBRETABLOQUE\d+X/g;
+/** Separates the page from the list of what the AI changed in its answer. */
+export const CHANGES_MARKER = "LIBRETACAMBIOS";
+/** Starts a line the AI turned into a sticky note: "> [!nota] …". */
+export const STICKY_TAG = "[!nota]";
 /** Starts a toggle's line: "- ▸ Title". */
 export const TOGGLE = "▸ ";
 
@@ -134,8 +139,15 @@ export function toTidyMarkdown(document: TidyBlock[]): TidySource {
   return { markdown, blocks, links };
 }
 
+const WEB_ADDRESS = /https?:\/\/[^\s<>()\]]+/g;
+
+/** The web addresses in the text, unescaped and without a trailing "/" or "#". */
+const webAddresses = (markdown: string) =>
+  new Set(markdown.match(WEB_ADDRESS)?.map((url) => url.replace(/\\(?=[\\*_`[\]])/g, "").replace(/[/#]+$/, "")));
+
+/** The text the AI wrote: no markers, and no web addresses (checked on their own: a link's text may change). */
 const withoutMarkers = (markdown: string) =>
-  markdown.replace(BLOCK_MARKER, " ").replace(/LIBRETAENLACE\d+X/g, " ");
+  markdown.replace(BLOCK_MARKER, " ").replace(/LIBRETAENLACE\d+X/g, " ").replace(WEB_ADDRESS, " ");
 
 // Linking words a list or a heading naturally leaves out ("hay que llamar…" → "Llamar…").
 const FILLER = new Set(
@@ -146,27 +158,28 @@ const FILLER = new Set(
   ).split(" "),
 );
 
-/** Words that tell whether the AI kept the text: 3+ letters, lowercase, no accents, no filler. */
-function words(markdown: string): string[] {
-  return (
-    withoutMarkers(markdown)
-      .normalize("NFD")
-      .replace(/\p{M}/gu, "")
-      .toLowerCase()
-      .match(/\p{L}{3,}/gu)
-      ?.filter((word) => !FILLER.has(word)) ?? []
-  );
+/** Letters a word is compared by, so a rewritten sentence keeps its words ("pausará" → "pausa", "accedemos" → "acceder"). */
+const STEM_LENGTH = 5;
+
+/** Words that tell whether the AI kept the text (3+ letters, no filler), each with its stem: lowercase, no accents, cut short. */
+function wordsAndStems(markdown: string): { word: string; stem: string }[] {
+  return (withoutMarkers(markdown).normalize("NFC").match(/\p{L}{3,}/gu) ?? [])
+    .map((word) => ({ word, plain: word.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase() }))
+    .filter(({ plain }) => !FILLER.has(plain))
+    .map(({ word, plain }) => ({ word, stem: plain.slice(0, STEM_LENGTH) }));
 }
+
+const words = (markdown: string) => wordsAndStems(markdown).map(({ stem }) => stem);
 
 /**
  * The numbers in the text (dates, amounts, references): the data a tidier
- * page must keep. Enumerations ("1)", "2." starting a line, heading or list
- * item) don't count, and 1.284 is 1284.
+ * page must keep. Enumerations ("1)", "2.", "2.3" starting a line, heading
+ * or list item, bold or not) don't count, and 1.284 is 1284.
  */
 function numbers(markdown: string): string[] {
   return (
     withoutMarkers(markdown)
-      .replace(/^([ \t]*(?:#{1,6}[ \t]+|[-*+][ \t]+|>[ \t]*)*)\d{1,2}[.)](?=\s)/gm, "$1")
+      .replace(/^([ \t]*(?:#{1,6}[ \t]+|[-*+][ \t]+|>[ \t]*|\*\*)*)\d{1,2}(?:(?:\.\d{1,2})+\.?|[.)])(?=[\s*])/gm, "$1")
       .match(/\d+(?:[.,]\d+)*/g)
       ?.map((n) => n.replace(/[.,]/g, "")) ?? []
   );
@@ -187,15 +200,12 @@ function closeTo(a: string, b: string, max: number): boolean {
   return previous[b.length] <= max;
 }
 
-/** Share of the page's different words still there, a word with a typo fixed included. */
-function distinctKept(before: string[], after: string[]): number {
-  const unique = [...new Set(before)];
-  if (!unique.length) return 1;
+/** The page's different words that aren't there any more; a word with a typo fixed ("empelado") is. */
+function lostWords(before: string[], after: string[]): string[] {
   const there = new Set(after);
-  const kept = unique.filter(
-    (word) => there.has(word) || (word.length >= 5 && [...there].some((other) => closeTo(word, other, 2))),
+  return [...new Set(before)].filter(
+    (word) => !there.has(word) && !(word.length === STEM_LENGTH && [...there].some((other) => closeTo(word, other, 1))),
   );
-  return kept.length / unique.length;
 }
 
 /**
@@ -225,10 +235,67 @@ function ownLines(markdown: string): string {
     .trim();
 }
 
-export type TidyCheck = { ok: true; markdown: string } | { ok: false; reason: "dropped" | "invented" | "empty" };
+export type TidyCheck =
+  | {
+      ok: true;
+      markdown: string;
+      /** Words of the page the answer may have left out, to point out (empty when it kept nearly all). */
+      missing: string[];
+    }
+  | { ok: false; reason: "dropped" | "invented" | "empty" };
 
-/** Share of the page's different words the answer must keep (grouping drops repeats like a name). */
-const MIN_DISTINCT_KEPT = 0.85;
+/** The AI's answer: the page, then CHANGES_MARKER and a short list of what it changed. */
+export function splitTidyAnswer(answer: string): { page: string; changes: string[] } {
+  const at = answer.search(CHANGES_LINE);
+  if (at < 0) return { page: answer, changes: [] };
+  const changes = answer
+    .slice(at)
+    .split("\n")
+    .slice(1)
+    .map((line) => line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, "").replace(/[*_`]/g, "").trim())
+    .filter((line) => line && !line.includes("LIBRETA"))
+    .slice(0, MAX_CHANGES)
+    .map((line) => (line.length > MAX_CHANGE_LENGTH ? `${line.slice(0, MAX_CHANGE_LENGTH - 1)}…` : line));
+  return { page: answer.slice(0, at), changes };
+}
+
+const CHANGES_LINE = new RegExp(`^[ \\t*_#]*${CHANGES_MARKER}[ \\t*_:]*$`, "m");
+const MAX_CHANGES = 5;
+const MAX_CHANGE_LENGTH = 200;
+
+/** A sticky note the AI wrote: "> [!nota] …" (STICKY_TAG). */
+const STICKY_LINE = /^[ \t]*>[ \t]*\[!nota\]/i;
+
+/**
+ * Sticky notes the AI wrote, each on one line between blank lines. A note
+ * that only repeats a line the page still has is dropped: the AI was asked
+ * to move warnings into notes, and sometimes copies them instead.
+ */
+function tidyNotes(markdown: string): string {
+  const lines = markdown
+    // "> [!nota]" alone, with the warning on the next "> " line.
+    .replace(/^([ \t]*>[ \t]*\[!nota\])[ \t]*\n[ \t]*>[ \t]?/gim, "$1 ")
+    .split("\n");
+  const others = lines.filter((line) => !STICKY_LINE.test(line)).map((line) => new Set(words(line)));
+  return lines
+    .flatMap((line) => {
+      if (!STICKY_LINE.test(line)) return [line];
+      const note = [...new Set(words(line.replace(STICKY_LINE, "")))];
+      const repeated =
+        note.length >= 3 && others.some((other) => note.filter((word) => other.has(word)).length >= note.length * 0.8);
+      return repeated ? [] : ["", line, ""];
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+/**
+ * Share of the page's different words the answer must keep (grouping drops
+ * repeats like a name). Below WARN the words it left out are pointed out.
+ */
+const MIN_DISTINCT_KEPT = 0.7;
+const WARN_DISTINCT_KEPT = 0.85;
+const MAX_MISSING_SHOWN = 12;
 /** Share of all its words, repeats included: catches a page cut down to one of each. */
 const MIN_ALL_KEPT = 0.5;
 /** Share of its numbers of two or more digits (dates, amounts, codes), repeats included. */
@@ -257,26 +324,35 @@ export function checkTidyMarkdown(source: TidySource, answer: string): TidyCheck
     seen.add(marker);
     return marker;
   });
-  const missing = [...source.blocks.keys()].filter((marker) => !seen.has(marker));
-  if (missing.length) markdown += `\n\n${missing.join("\n\n")}`;
-  markdown = ownLines(markdown);
+  const markersLeftOut = [...source.blocks.keys()].filter((marker) => !seen.has(marker));
+  if (markersLeftOut.length) markdown += `\n\n${markersLeftOut.join("\n\n")}`;
+  markdown = tidyNotes(ownLines(markdown)).trim();
 
   // Trailing spaces would read as line breaks.
   markdown = markdown.replace(/[ \t]+$/gm, "");
 
-  const before = words(source.markdown);
+  const sourceWords = wordsAndStems(source.markdown);
+  const before = sourceWords.map(({ stem }) => stem);
   const after = words(markdown);
+  const lost = lostWords(before, after);
+  const distinctKept = before.length ? 1 - lost.length / new Set(before).size : 1;
   const [numbersBefore, numbersAfter] = [numbers(source.markdown), numbers(markdown)];
   const long = (n: string) => n.length > 1;
   const short = (n: string) => n.length === 1;
+  const addresses = webAddresses(markdown);
   const dropped =
-    distinctKept(before, after) < MIN_DISTINCT_KEPT ||
+    [...webAddresses(source.markdown)].some((url) => !addresses.has(url)) ||
+    distinctKept < MIN_DISTINCT_KEPT ||
     keptShare(before, after) < MIN_ALL_KEPT ||
     keptShare(numbersBefore.filter(long), numbersAfter.filter(long)) < MIN_NUMBERS_KEPT ||
     countMissing(numbersBefore.filter(short), numbersAfter.filter(short)) > digitsMayGo(numbersBefore.filter(short).length);
   if (dropped) return { ok: false, reason: "dropped" };
   if (after.length > before.length * MAX_GROWTH + 40) return { ok: false, reason: "invented" };
-  return { ok: true, markdown };
+  const lostSet = new Set(distinctKept < WARN_DISTINCT_KEPT ? lost : []);
+  const missing = [
+    ...new Set(sourceWords.filter(({ stem }) => lostSet.has(stem)).map(({ word }) => word.toLowerCase())),
+  ].slice(0, MAX_MISSING_SHOWN);
+  return { ok: true, markdown, missing };
 }
 
 /** How much of `before` is still in `after`, counting repeats (a line written twice must stay twice). */

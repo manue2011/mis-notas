@@ -8,11 +8,21 @@ import { aiEnabled, env } from "@/lib/env";
 import { pageContentSchema, pageTitleSchema } from "@/lib/pages/content";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 import { groqChat, GroqError } from "./groq";
-import { checkTidyMarkdown, toTidyMarkdown, type TidyBlock } from "./tidy-markdown";
+import { checkTidyMarkdown, splitTidyAnswer, toTidyMarkdown, type TidyBlock } from "./tidy-markdown";
 import { DAILY_TIDY_LIMIT, MAX_TIDY_CHARS } from "./limits";
 import { TIDY_SYSTEM_PROMPT, tidyMaxTokens, tidyUserMessage } from "./tidy-prompt";
 
-export type TidyResult = { ok: true; markdown: string; remaining: number } | { ok: false; error: string };
+export type TidyResult =
+  | {
+      ok: true;
+      markdown: string;
+      /** What the AI says it changed, a line each. */
+      changes: string[];
+      /** Words of the page it may have left out. */
+      missing: string[];
+      remaining: number;
+    }
+  | { ok: false; error: string };
 
 const inputSchema = z.object({ organizationId: z.string().min(1), pageId: z.uuid(), title: pageTitleSchema });
 
@@ -109,16 +119,19 @@ export async function tidyPageAction(
     };
   }
 
-  const checked = checkTidyMarkdown(source, answer);
+  const { page: tidied, changes } = splitTidyAnswer(answer);
+  const checked = checkTidyMarkdown(source, tidied);
   if (!checked.ok) {
     console.warn("[ai] tidy answer rejected:", checked.reason);
+    // Not the person's doing: the try doesn't count.
+    await giveBackUse(access.userId);
     return {
       ok: false,
       error:
         checked.reason === "invented"
           ? "La IA ha añadido cosas que no estaban en la página, así que no te la proponemos. Prueba otra vez."
-          : "La IA se ha dejado parte del texto, así que no te la proponemos. Prueba otra vez.",
+          : "La IA se ha dejado datos de la página (números, enlaces o mucho texto), así que no te la proponemos. Prueba otra vez.",
     };
   }
-  return { ok: true, markdown: checked.markdown, remaining };
+  return { ok: true, markdown: checked.markdown, changes, missing: checked.missing, remaining };
 }

@@ -40,8 +40,8 @@ export async function groqChat(messages: Message[], maxTokens: number): Promise<
         messages,
         temperature: 0.2,
         max_completion_tokens: maxTokens,
-        // Tidying doesn't need long thinking, and thinking counts against the limits.
-        reasoning_effort: "low",
+        // Some thinking to plan the page (low barely reorganises it); it counts against the limits.
+        reasoning_effort: "medium",
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",

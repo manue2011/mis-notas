@@ -15,7 +15,7 @@ type Props = Pick<TidyPreviewProps, "organizationId" | "slug" | "pageId" | "page
   editorRef: RefObject<NotebookEditorHandle | null>;
 };
 
-type Proposal = { before: PageBlock[]; after: PageBlock[]; remaining: number };
+type Proposal = { before: PageBlock[]; after: PageBlock[]; changes: string[]; missing: string[]; remaining: number };
 
 /** How long "Deshacer" stays after applying. */
 const UNDO_MS = 60_000;
@@ -52,7 +52,7 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
       const source = toTidyMarkdown(before as TidyBlock[]);
       const after = tidyBlocks(result.markdown, source, editor.parseMarkdown) as PageBlock[];
       setChangedMeanwhile(false);
-      setProposal({ before, after, remaining: result.remaining });
+      setProposal({ before, after, changes: result.changes, missing: result.missing, remaining: result.remaining });
     });
   }
 
@@ -100,7 +100,7 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
           </button>
           {pending ? null : (
             <span aria-hidden className="font-hand text-xl leading-none text-ink-muted">
-              títulos, listas y pasos en un clic
+              agrupa, resalta y ordena en un clic
             </span>
           )}
         </>
@@ -109,7 +109,10 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
       {proposal ? (
         <TidyPreview
           {...previewProps}
-          blocks={proposal.after}
+          before={proposal.before}
+          after={proposal.after}
+          changes={proposal.changes}
+          missing={proposal.missing}
           remaining={proposal.remaining}
           changedMeanwhile={changedMeanwhile}
           onApply={apply}
