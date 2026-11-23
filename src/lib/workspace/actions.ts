@@ -4,12 +4,14 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { organization, workspaceSettings } from "@/db/schema";
+import { asset, member, organization, workspaceSettings } from "@/db/schema";
 import { ACCENT_KEYS } from "@/lib/accent";
 import { auth } from "@/lib/auth/auth";
 import { requireUser } from "@/lib/auth/session";
+import { destroyImages } from "@/lib/cloudinary/server";
 import { requireWorkspaceById, WorkspaceForbiddenError } from "./access";
 import { WORKSPACE_FONT_KEYS, WORKSPACE_ICON_KEYS } from "./icons";
 import { workspaceSlug } from "./slug";
@@ -142,6 +144,60 @@ export async function setAllowedDomainAction(organizationId: string, domain: str
       .where(eq(workspaceSettings.organizationId, access.organizationId));
     revalidatePath(`/espacio/${access.slug}/ajustes`);
   });
+}
+
+class DeleteWorkspaceError extends Error {}
+
+/**
+ * Deletes the whole workspace: pages, trash, invite links and images. Only
+ * its admin can, and only while nobody else is in it; with more people the
+ * admin can just leave, once someone else is admin.
+ */
+export async function deleteWorkspaceAction(
+  organizationId: string,
+  confirmName: string,
+): Promise<WorkspaceActionResult> {
+  const id = z.string().min(1).safeParse(organizationId);
+  const typed = z.string().trim().max(200).safeParse(confirmName);
+  if (!id.success || !typed.success) return { ok: false, error: "Espacio no válido." };
+
+  let images: string[];
+  try {
+    const access = await requireWorkspaceById(id.data, { settings: ["update"] });
+    if (typed.data.toLowerCase() !== access.name.trim().toLowerCase()) {
+      return { ok: false, error: "Escribe el nombre del espacio tal cual para confirmar." };
+    }
+    images = await db.transaction(async (tx) => {
+      // Locked, so nobody joins halfway through.
+      const members = await tx
+        .select({ userId: member.userId })
+        .from(member)
+        .where(eq(member.organizationId, access.organizationId))
+        .for("update");
+      if (members.some((m) => m.userId !== access.userId)) {
+        throw new DeleteWorkspaceError(
+          "Solo puedes eliminar el espacio cuando no queda nadie más en él.",
+        );
+      }
+      const owned = await tx
+        .select({ publicId: asset.cloudinaryPublicId })
+        .from(asset)
+        .where(eq(asset.organizationId, access.organizationId));
+      // Cascades take its pages, images, settings, members and invite links.
+      await tx.delete(organization).where(eq(organization.id, access.organizationId));
+      return owned.map((a) => a.publicId);
+    });
+  } catch (error) {
+    if (error instanceof DeleteWorkspaceError || error instanceof WorkspaceForbiddenError) {
+      return { ok: false, error: error.message };
+    }
+    throw error; // notFound() among them
+  }
+
+  // The rows are gone, so a failure here only leaves unreachable files behind.
+  after(() => destroyImages(images).catch((error) => console.error("[workspace] image cleanup failed", error)));
+  revalidatePath("/", "layout");
+  redirect("/libretas");
 }
 
 /** Remembers the last workspace opened, so "/" can go back to it. */

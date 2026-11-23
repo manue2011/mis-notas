@@ -2,8 +2,9 @@
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
-// Which sidebar branches are open, per workspace. Kept in localStorage: it's a
-// per-person convenience, so losing it (private window, cleared data) is fine.
+// Which sidebar branches are open, per workspace, and which workspaces are
+// folded. Kept in localStorage: it's a per-person convenience, so losing it
+// (private window, cleared data) is fine.
 
 const listeners = new Set<() => void>();
 const memory = new Map<string, string>();
@@ -45,22 +46,32 @@ function subscribe(listener: () => void) {
 }
 
 export function useExpandedPages(organizationId: string) {
-  const key = storageKey(organizationId);
+  const { ids: expanded, setOpen } = useStoredIds(storageKey(organizationId));
+  return { expanded, setOpen };
+}
+
+/** Workspaces whose pages are folded away in the sidebar. */
+export function useFoldedWorkspaces() {
+  const { ids: folded, setOpen: setFolded } = useStoredIds("libreta:folded-workspaces");
+  return { folded, setFolded };
+}
+
+function useStoredIds(key: string) {
   const raw = useSyncExternalStore(
     subscribe,
     () => read(key),
     () => "[]",
   );
-  const expanded = useMemo(() => parse(raw), [raw]);
+  const ids = useMemo(() => parse(raw), [raw]);
 
   const setOpen = useCallback(
-    (ids: string[], open: boolean) => {
+    (changed: string[], open: boolean) => {
       const next = parse(read(key));
-      ids.forEach((id) => (open ? next.add(id) : next.delete(id)));
+      changed.forEach((id) => (open ? next.add(id) : next.delete(id)));
       write(key, next);
     },
     [key],
   );
 
-  return { expanded, setOpen };
+  return { ids, setOpen };
 }

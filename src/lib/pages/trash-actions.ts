@@ -1,12 +1,12 @@
 "use server";
 
-import { and, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm";
+import { and, eq, isNotNull, sql, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { asset, page } from "@/db/schema";
-import { destroyImages } from "@/lib/cloudinary/server";
+import { page } from "@/db/schema";
+import { purgeTrashedPages, PurgeImagesError } from "./purge";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 
 export type TrashActionResult = { ok: true } | { ok: false; error: string };
@@ -74,8 +74,7 @@ export async function restorePageAction(organizationId: string, pageId: string):
 
 /**
  * Deletes a page from the trash for good, with everything inside it and its
- * images in Cloudinary. Images that another page still shows (blocks copied
- * across pages) are kept and handed over to that page.
+ * images in Cloudinary (see purgeTrashedPages).
  */
 export async function deletePageForeverAction(organizationId: string, pageId: string): Promise<TrashActionResult> {
   const ids = idsSchema.safeParse({ organizationId, pageId });
@@ -83,61 +82,28 @@ export async function deletePageForeverAction(organizationId: string, pageId: st
   const access = await authorize(ids.data.organizationId);
   if (!("organizationId" in access)) return access;
 
-  const [root] = await db
-    .select({ id: page.id })
-    .from(page)
-    .where(inTrash(access.organizationId, ids.data.pageId))
-    .limit(1);
-  if (!root) return { ok: false, error: NOT_IN_TRASH };
+  return purge(access, eq(page.id, ids.data.pageId), NOT_IN_TRASH);
+}
 
-  const { rows: subtree } = await db.execute<{ id: string }>(sql`
-    with recursive subtree as (
-      select ${root.id}::uuid as id
-      union all
-      select child.id from ${page} child join subtree on child.parent_id = subtree.id
-    )
-    select id from subtree
-  `);
-  const pageIds = subtree.map((row) => row.id);
+/** Deletes everything in the trash for good, images included. */
+export async function emptyTrashAction(organizationId: string): Promise<TrashActionResult> {
+  const id = z.string().min(1).safeParse(organizationId);
+  if (!id.success) return { ok: false, error: "Espacio no válido." };
+  const access = await authorize(id.data);
+  if (!("organizationId" in access)) return access;
 
-  const images = await db
-    .select({ id: asset.id, publicId: asset.cloudinaryPublicId })
-    .from(asset)
-    .where(and(eq(asset.organizationId, access.organizationId), inArray(asset.pageId, pageIds)));
+  return purge(access, undefined, "La papelera ya está vacía.");
+}
 
-  // For each image, another page (outside what's being deleted) that still shows it.
-  const keptBy = new Map<string, string>();
-  for (const image of images) {
-    const [user] = await db
-      .select({ id: page.id })
-      .from(page)
-      .where(
-        and(
-          eq(page.organizationId, access.organizationId),
-          notInArray(page.id, pageIds),
-          sql`${page.content}::text like ${`%${image.publicId}%`}`,
-        ),
-      )
-      .limit(1);
-    if (user) keptBy.set(image.id, user.id);
-  }
-
-  // Cloudinary first: if it fails, nothing is deleted and it can be retried.
+async function purge(access: WorkspaceAccess, roots: SQL | undefined, nothingLeft: string): Promise<TrashActionResult> {
+  let deleted: number;
   try {
-    await destroyImages(images.filter((image) => !keptBy.has(image.id)).map((image) => image.publicId));
+    deleted = await purgeTrashedPages(access.organizationId, roots);
   } catch (error) {
-    console.error("[trash]", error instanceof Error ? error.message : error);
-    return { ok: false, error: "No hemos podido borrar sus imágenes. Vuelve a intentarlo en un momento." };
+    if (error instanceof PurgeImagesError) return { ok: false, error: error.message };
+    throw error;
   }
-
-  await db.transaction(async (tx) => {
-    for (const [assetId, newPageId] of keptBy) {
-      await tx.update(asset).set({ pageId: newPageId }).where(eq(asset.id, assetId));
-    }
-    // Sub-pages and the remaining asset rows go with it (on delete cascade).
-    await tx.delete(page).where(inTrash(access.organizationId, root.id));
-  });
-
+  if (deleted === 0) return { ok: false, error: nothingLeft };
   revalidatePath(`/espacio/${access.slug}`, "layout");
   return { ok: true };
 }

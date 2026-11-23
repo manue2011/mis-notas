@@ -8,7 +8,7 @@ type Props = {
   name: string;
   email: string;
   superadmin: boolean;
-  workspace: { organizationId: string; name: string };
+  workspace: { organizationId: string; name: string; canDelete: boolean };
 };
 
 export function UserMenu({ name, email, superadmin, workspace }: Props) {

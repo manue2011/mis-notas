@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { FileText } from "lucide-react";
+import { EmptyTrashButton } from "@/components/trash/EmptyTrashButton";
 import { TrashItemActions } from "@/components/trash/TrashItemActions";
 import { HandUnderline } from "@/components/ui/HandUnderline";
 import { MarginNote } from "@/components/ui/MarginNote";
@@ -43,34 +44,41 @@ async function TrashScreen({ params }: Props) {
             <MarginNote className="mt-4 block -rotate-1">qué orden, da hasta gusto</MarginNote>
           </div>
         ) : (
-          <ul className="mt-10 flex flex-col divide-y divide-dashed divide-border border-y border-dashed border-border">
-            {entries.map((entry) => (
-              <li key={entry.id} className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex min-w-0 gap-3">
-                  <FileText size={18} strokeWidth={1.5} className="mt-1.5 shrink-0 text-ink-muted" aria-hidden />
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <span className={entry.title ? "font-serif text-lg" : "font-serif text-lg text-ink-muted italic"}>
-                      {entry.title || "Sin título"}
-                    </span>
-                    <span className="text-sm text-ink-muted">
-                      Borrada el {formatDate(entry.deletedAt)}
-                      {entry.deletedBy ? ` por ${entry.deletedBy}` : ""}
-                      {entry.subpages > 0
-                        ? ` · ${entry.subpages === 1 ? "con 1 subpágina" : `con ${entry.subpages} subpáginas`}`
-                        : ""}
-                    </span>
+          <>
+            {canManage ? (
+              <div className="mt-8 flex">
+                <EmptyTrashButton organizationId={access.organizationId} pages={entries.length} />
+              </div>
+            ) : null}
+            <ul className="mt-6 flex flex-col divide-y divide-dashed divide-border border-y border-dashed border-border">
+              {entries.map((entry) => (
+                <li key={entry.id} className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 gap-3">
+                    <FileText size={18} strokeWidth={1.5} className="mt-1.5 shrink-0 text-ink-muted" aria-hidden />
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className={entry.title ? "font-serif text-lg" : "font-serif text-lg text-ink-muted italic"}>
+                        {entry.title || "Sin título"}
+                      </span>
+                      <span className="text-sm text-ink-muted">
+                        Borrada el {formatDate(entry.deletedAt)}
+                        {entry.deletedBy ? ` por ${entry.deletedBy}` : ""}
+                        {entry.subpages > 0
+                          ? ` · ${entry.subpages === 1 ? "con 1 subpágina" : `con ${entry.subpages} subpáginas`}`
+                          : ""}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                {canManage ? (
-                  <TrashItemActions
-                    organizationId={access.organizationId}
-                    pageId={entry.id}
-                    subpages={entry.subpages}
-                  />
-                ) : null}
-              </li>
-            ))}
-          </ul>
+                  {canManage ? (
+                    <TrashItemActions
+                      organizationId={access.organizationId}
+                      pageId={entry.id}
+                      subpages={entry.subpages}
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </>

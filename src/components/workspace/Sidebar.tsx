@@ -18,10 +18,12 @@ type Props = {
   access: WorkspaceAccess;
   workspaces: WorkspaceSummary[];
   pages: PageSummary[];
+  /** How many people are in this workspace. */
+  members: number;
   user: { name: string; email: string; superadmin: boolean };
 };
 
-export function Sidebar({ access, workspaces, pages, user }: Props) {
+export function Sidebar({ access, workspaces, pages, members, user }: Props) {
   return (
     <div className="flex h-full flex-col gap-7 px-4 py-6">
       {/* On mobile the logo lives in the top bar instead. */}
@@ -38,7 +40,26 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         canManage={can(access.role, { settings: ["update"] })}
       />
       <SidebarSection title="Espacios de trabajo">
-        <WorkspaceNav workspaces={workspaces} currentSlug={access.slug} />
+        <WorkspaceNav workspaces={workspaces} currentSlug={access.slug}>
+          <PageTree
+            key={access.organizationId}
+            organizationId={access.organizationId}
+            slug={access.slug}
+            pages={pages}
+            canCreate={can(access.role, { page: ["create"] })}
+            canMove={can(access.role, { page: ["update"] })}
+          />
+          {can(access.role, { page: ["create"] }) ? (
+            <NewPageButton organizationId={access.organizationId} />
+          ) : null}
+          <Link
+            href={`/espacio/${access.slug}/papelera`}
+            className="flex min-h-11 items-center gap-2 rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:bg-surface/70 hover:text-ink"
+          >
+            <Trash2 size={16} strokeWidth={1.5} aria-hidden />
+            Papelera
+          </Link>
+        </WorkspaceNav>
       </SidebarSection>
       {can(access.role, { settings: ["update"] }) ? (
         <SidebarSection title="Color del espacio">
@@ -49,26 +70,6 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
           />
         </SidebarSection>
       ) : null}
-      <SidebarSection title="Páginas">
-        <PageTree
-          key={access.organizationId}
-          organizationId={access.organizationId}
-          slug={access.slug}
-          pages={pages}
-          canCreate={can(access.role, { page: ["create"] })}
-          canMove={can(access.role, { page: ["update"] })}
-        />
-        {can(access.role, { page: ["create"] }) ? (
-          <NewPageButton organizationId={access.organizationId} />
-        ) : null}
-        <Link
-          href={`/espacio/${access.slug}/papelera`}
-          className="flex min-h-11 items-center gap-2 rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:bg-surface/70 hover:text-ink"
-        >
-          <Trash2 size={16} strokeWidth={1.5} aria-hidden />
-          Papelera
-        </Link>
-      </SidebarSection>
       <div className="mt-auto flex flex-col gap-5">
         {can(access.role, { settings: ["update"] }) ? (
           <Link
@@ -82,7 +83,14 @@ export function Sidebar({ access, workspaces, pages, user }: Props) {
         {can(access.role, { inviteLink: ["create"] }) ? (
           <InviteTeamCard key={access.organizationId} organizationId={access.organizationId} />
         ) : null}
-        <UserMenu {...user} workspace={{ organizationId: access.organizationId, name: access.name }} />
+        <UserMenu
+          {...user}
+          workspace={{
+            organizationId: access.organizationId,
+            name: access.name,
+            canDelete: members === 1 && can(access.role, { settings: ["update"] }),
+          }}
+        />
       </div>
     </div>
   );

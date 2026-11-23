@@ -24,3 +24,12 @@ export async function listMembers(organizationId: string) {
     .where(eq(member.organizationId, organizationId))
     .orderBy(sql`case ${member.role} when 'admin' then 0 when 'editor' then 1 else 2 end`, asc(user.name));
 }
+
+/** How many people are in a workspace. Callers must have checked access. */
+export async function countMembers(organizationId: string): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(member)
+    .where(eq(member.organizationId, organizationId));
+  return row?.count ?? 0;
+}

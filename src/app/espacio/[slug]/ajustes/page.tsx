@@ -8,6 +8,7 @@ import { MembersList } from "@/components/settings/MembersList";
 import { NotionImport } from "@/components/settings/NotionImport";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HandUnderline } from "@/components/ui/HandUnderline";
+import { DeleteWorkspaceForm } from "@/components/workspace/DeleteWorkspaceForm";
 import { TopBar } from "@/components/workspace/TopBar";
 import { WorkspaceAccentPicker } from "@/components/workspace/WorkspaceAccentPicker";
 import { listActiveInviteLinks } from "@/lib/invites/queries";
@@ -116,6 +117,20 @@ async function SettingsScreen({ params }: Props) {
             description="Trae tus páginas de Notion a este espacio, con su contenido e imágenes."
           >
             <NotionImport organizationId={access.organizationId} slug={access.slug} />
+          </SettingsSection>
+          <SettingsSection
+            id="eliminar"
+            title="Eliminar el espacio"
+            description="Borra el espacio entero: sus páginas, la papelera y las imágenes."
+          >
+            {members.length === 1 ? (
+              <DeleteWorkspaceForm organizationId={access.organizationId} name={access.name} />
+            ) : (
+              <p className="max-w-md text-sm text-ink-muted">
+                Solo se puede eliminar cuando no queda nadie más en él. Si quieres irte, nombra a otra persona
+                administradora y usa «Salir de este espacio» en la barra lateral.
+              </p>
+            )}
           </SettingsSection>
         </div>
       </div>

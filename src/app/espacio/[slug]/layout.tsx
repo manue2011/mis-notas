@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/workspace/Sidebar";
 import { WorkspaceFrame } from "@/components/workspace/WorkspaceFrame";
 import { isSuperadmin, requireUser } from "@/lib/auth/session";
 import { env } from "@/lib/env";
+import { countMembers } from "@/lib/members/queries";
 import { listPages } from "@/lib/pages/queries";
 import { requireWorkspaceBySlug } from "@/lib/workspace/access";
 import { listMyWorkspaces } from "@/lib/workspace/queries";
@@ -32,6 +33,7 @@ async function WorkspaceShell({
     listPages(slug),
     requireUser(),
   ]);
+  const members = await countMembers(access.organizationId);
 
   return (
     <AccentScope accent={access.accent} font={access.font} tint className="min-h-screen">
@@ -43,6 +45,7 @@ async function WorkspaceShell({
             access={access}
             workspaces={workspaces}
             pages={pages}
+            members={members}
             user={{ name: user.name, email: user.email, superadmin: isSuperadmin(user) }}
           />
         }
