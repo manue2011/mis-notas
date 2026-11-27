@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { page, user } from "@/db/schema";
 import { requireWorkspaceById } from "@/lib/workspace/access";
+import { canSeePage } from "./scope";
 
 export type PagePreview = {
   title: string;
@@ -22,6 +23,7 @@ export async function getPagePreviewAction(organizationId: string, pageId: strin
   if (!input.success) return null;
 
   const access = await requireWorkspaceById(input.data.organizationId, { page: ["read"] });
+  if (!(await canSeePage(access, input.data.pageId))) return null;
   const [row] = await db
     .select({
       title: page.title,

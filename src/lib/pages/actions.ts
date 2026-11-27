@@ -12,11 +12,14 @@ import type { Permissions } from "@/lib/auth/permissions";
 import { env } from "@/lib/env";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 import { extractSearchText, pageContentSchema, pageTitleSchema } from "./content";
+import { canCreateUnder, canSeePage, isScopeRoot } from "./scope";
 import { recordPageVersion } from "./versions";
 
 export type PageActionResult = { ok: true; savedAt: string } | { ok: false; error: string };
 
 const idsSchema = z.object({ organizationId: z.string().min(1), pageId: z.uuid() });
+
+const SCOPE_ROOT_DELETE = "Esta página te la han compartido: puedes editarla, pero no borrarla.";
 
 export async function createPageAction(
   organizationId: string,
@@ -36,6 +39,9 @@ export async function createPageAction(
   }
 
   const parent = input.data.parentId;
+  if (!(await canCreateUnder(access, parent))) {
+    return { error: parent ? "La página de arriba ya no existe." : "Crea las páginas nuevas dentro de las tuyas." };
+  }
   if (parent) {
     const [row] = await db
       .select({ id: page.id })
@@ -125,6 +131,8 @@ export async function deletePageAction(organizationId: string, pageId: string): 
     if (error instanceof WorkspaceForbiddenError) return { error: error.message };
     throw error;
   }
+  if (!(await canSeePage(access, ids.data.pageId))) return { error: "Esta página ya no existe." };
+  if (isScopeRoot(access, ids.data.pageId)) return { error: SCOPE_ROOT_DELETE };
 
   // The page and all its sub-pages go together, stamped with the same time so
   // they can be restored together later.
@@ -163,6 +171,7 @@ async function updatePage(
     if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message };
     throw error;
   }
+  if (!(await canSeePage(access, ids.pageId))) return { ok: false, error: "Esta página ya no existe." };
 
   if (values.title !== undefined || values.content !== undefined) {
     // The history is a nicety: if it fails, the page is still saved.

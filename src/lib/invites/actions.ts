@@ -6,10 +6,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { inviteLink, member, organization, workspaceSettings } from "@/db/schema";
+import { inviteLink, member, memberPageScope, organization, workspaceSettings } from "@/db/schema";
 import { ROLE_NAMES } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { env } from "@/lib/env";
+import { pageScopeSchema, pagesExist } from "@/lib/pages/scope";
 import { hashToken, newToken, TOKEN_PATTERN } from "@/lib/tokens";
 import { requireWorkspaceById, WorkspaceForbiddenError } from "@/lib/workspace/access";
 import {
@@ -30,13 +31,16 @@ const linkOptionsSchema = z.object({
   role: z.enum(ROLE_NAMES),
   days: z.number().refine((d) => (INVITE_LINK_DAY_OPTIONS as readonly number[]).includes(d)),
   maxUses: z.int().min(1).max(MAX_INVITE_USES).nullable(),
+  /** What whoever joins may see; null (or left out) for the whole workspace. */
+  pageIds: pageScopeSchema.optional(),
 });
 
 export type InviteLinkOptions = z.infer<typeof linkOptionsSchema>;
 
 /**
  * A new invite link. Without options it's the sidebar card's: editor role,
- * 7 days, unlimited uses. Only its hash is stored, so the URL is shown once.
+ * 7 days, unlimited uses, the whole workspace. Only its hash is stored, so
+ * the URL is shown once.
  */
 export async function createInviteLinkAction(
   organizationId: string,
@@ -49,6 +53,11 @@ export async function createInviteLinkAction(
 
   try {
     const access = await requireWorkspaceById(id.data, { inviteLink: ["create"] });
+    // Admins see the whole workspace whatever the link says.
+    const pageIds = opts.data.role === "admin" ? null : (opts.data.pageIds ?? null);
+    if (pageIds && !(await pagesExist(access.organizationId, pageIds))) {
+      return { ok: false, error: "Una de las páginas ya no existe. Recarga y vuelve a elegir." };
+    }
     const token = newToken();
     await db.insert(inviteLink).values({
       organizationId: access.organizationId,
@@ -56,6 +65,7 @@ export async function createInviteLinkAction(
       role: opts.data.role,
       expiresAt: new Date(Date.now() + opts.data.days * 24 * 60 * 60 * 1000),
       maxUses: opts.data.maxUses,
+      pageIds: pageIds ? [...new Set(pageIds)] : null,
       createdBy: access.userId,
     });
     revalidatePath(`/espacio/${access.slug}/ajustes`);
@@ -140,6 +150,7 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
         expiresAt: inviteLink.expiresAt,
         maxUses: inviteLink.maxUses,
         uses: inviteLink.uses,
+        pageIds: inviteLink.pageIds,
       })
       .from(inviteLink)
       .where(eq(inviteLink.tokenHash, hashToken(token)))
@@ -164,13 +175,20 @@ export async function acceptInviteAction(token: string): Promise<{ error: string
     if (problem) return { error: inviteProblemText[problem] };
     if (!emailMatchesDomain(user.email, org.allowedEmailDomain)) return { error: inviteProblemText.domain };
 
+    const memberId = randomBytes(24).toString("base64url");
     await tx.insert(member).values({
-      id: randomBytes(24).toString("base64url"),
+      id: memberId,
       organizationId: link.organizationId,
       userId: user.id,
       role: link.role,
       createdAt: new Date(),
     });
+    // A link for some pages: they see those (and what's inside), nothing else.
+    if (link.pageIds && link.role !== "admin") {
+      await tx
+        .insert(memberPageScope)
+        .values({ memberId, organizationId: link.organizationId, pageIds: link.pageIds });
+    }
     await tx
       .update(inviteLink)
       .set({ uses: sql`${inviteLink.uses} + 1` })

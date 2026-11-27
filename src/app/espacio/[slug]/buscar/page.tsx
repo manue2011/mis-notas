@@ -27,7 +27,7 @@ async function SearchScreen({ params, searchParams }: Props) {
 
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
   const terms = searchTerms(query);
-  const [hits, pages] = await Promise.all([searchPages(access.organizationId, query), listPages(slug)]);
+  const [hits, pages] = await Promise.all([searchPages(access, query), listPages(slug)]);
   const withPaths = hits.map((hit) => ({
     ...hit,
     path: ancestorsOf(pages, hit.id).map((p) => p.title || "Sin título"),

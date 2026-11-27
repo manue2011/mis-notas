@@ -24,6 +24,8 @@ type Props = {
 };
 
 export function Sidebar({ access, workspaces, pages, members, user }: Props) {
+  // New pages at the top level; limited people add them inside their pages instead.
+  const canCreateTop = can(access.role, { page: ["create"] }) && access.pageScope === null;
   return (
     <div className="flex h-full flex-col gap-7 px-4 py-6">
       {/* On mobile the logo lives in the top bar instead. */}
@@ -36,7 +38,7 @@ export function Sidebar({ access, workspaces, pages, members, user }: Props) {
         slug={access.slug}
         pages={pages}
         workspaces={workspaces}
-        canCreate={can(access.role, { page: ["create"] })}
+        canCreate={canCreateTop}
         canManage={can(access.role, { settings: ["update"] })}
       />
       <SidebarSection title="Espacios de trabajo">
@@ -49,7 +51,7 @@ export function Sidebar({ access, workspaces, pages, members, user }: Props) {
             canCreate={can(access.role, { page: ["create"] })}
             canMove={can(access.role, { page: ["update"] })}
           />
-          {can(access.role, { page: ["create"] }) ? (
+          {canCreateTop ? (
             <NewPageButton organizationId={access.organizationId} />
           ) : null}
           <Link

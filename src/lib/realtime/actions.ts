@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { page } from "@/db/schema";
 import { requireUser } from "@/lib/auth/session";
 import { env } from "@/lib/env";
+import { canSeePage } from "@/lib/pages/scope";
 import { can, requireWorkspaceById } from "@/lib/workspace/access";
 import { issueTicket } from "./ticket";
 
@@ -13,8 +14,8 @@ export type TicketResult = { ok: true; token: string } | { ok: false };
 
 /**
  * A fresh ticket for the real-time server, asked for on every (re)connection.
- * Membership and role are checked here, each time, so someone removed from
- * the workspace can't reconnect.
+ * Membership, role and page scope are checked here, each time, so someone
+ * removed from the workspace (or from the page) can't reconnect.
  */
 export async function getPageTicketAction(organizationId: string, pageId: string): Promise<TicketResult> {
   const input = z.object({ organizationId: z.string().min(1), pageId: z.uuid() }).safeParse({ organizationId, pageId });
@@ -25,6 +26,7 @@ export async function getPageTicketAction(organizationId: string, pageId: string
     requireWorkspaceById(input.data.organizationId, { page: ["read"] }),
     requireUser(),
   ]);
+  if (!(await canSeePage(access, input.data.pageId))) return { ok: false };
   const [found] = await db
     .select({ id: page.id })
     .from(page)

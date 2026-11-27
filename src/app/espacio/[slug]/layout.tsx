@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AccentScope } from "@/components/ui/AccentScope";
 import { RealtimeWarmup } from "@/components/workspace/RealtimeWarmup";
 import { RememberWorkspace } from "@/components/workspace/RememberWorkspace";
+import { LimitedScope } from "@/components/workspace/scope-context";
 import { Sidebar } from "@/components/workspace/Sidebar";
 import { WorkspaceFrame } from "@/components/workspace/WorkspaceFrame";
 import { isSuperadmin, requireUser } from "@/lib/auth/session";
@@ -39,19 +40,21 @@ async function WorkspaceShell({
     <AccentScope accent={access.accent} font={access.font} tint className="min-h-screen">
       <RememberWorkspace organizationId={access.organizationId} />
       {env().REALTIME_URL ? <RealtimeWarmup healthUrl={healthUrlOf(env().REALTIME_URL!)} /> : null}
-      <WorkspaceFrame
-        sidebar={
-          <Sidebar
-            access={access}
-            workspaces={workspaces}
-            pages={pages}
-            members={members}
-            user={{ name: user.name, email: user.email, superadmin: isSuperadmin(user) }}
-          />
-        }
-      >
-        {children}
-      </WorkspaceFrame>
+      <LimitedScope limited={access.pageScope !== null}>
+        <WorkspaceFrame
+          sidebar={
+            <Sidebar
+              access={access}
+              workspaces={workspaces}
+              pages={pages}
+              members={members}
+              user={{ name: user.name, email: user.email, superadmin: isSuperadmin(user) }}
+            />
+          }
+        >
+          {children}
+        </WorkspaceFrame>
+      </LimitedScope>
     </AccentScope>
   );
 }

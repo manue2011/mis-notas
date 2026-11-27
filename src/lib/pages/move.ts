@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { page } from "@/db/schema";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
+import { canCreateUnder, canSeePage, isScopeRoot } from "./scope";
 
 export type MovePageResult = { ok: true } | { ok: false; error: string };
 
@@ -39,6 +40,14 @@ export async function movePageAction(
   } catch (error) {
     if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message };
     throw error;
+  }
+  // Limited people move pages around inside their own pages only.
+  if (!(await canSeePage(access, input.data.pageId))) return { ok: false, error: "Esta página ya no existe." };
+  if (isScopeRoot(access, input.data.pageId)) {
+    return { ok: false, error: "Esta página te la han compartido: puedes editarla, pero no moverla." };
+  }
+  if (!(await canCreateUnder(access, input.data.parentId))) {
+    return { ok: false, error: "Solo puedes mover páginas dentro de las tuyas." };
   }
 
   try {

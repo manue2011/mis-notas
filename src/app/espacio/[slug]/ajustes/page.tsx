@@ -14,6 +14,7 @@ import { WorkspaceAccentPicker } from "@/components/workspace/WorkspaceAccentPic
 import { listActiveInviteLinks } from "@/lib/invites/queries";
 import { emailMatchesDomain } from "@/lib/invites/rules";
 import { listMembers } from "@/lib/members/queries";
+import { listPages } from "@/lib/pages/queries";
 import { can, requireWorkspaceBySlug } from "@/lib/workspace/access";
 import { getAllowedDomain } from "@/lib/workspace/queries";
 
@@ -32,10 +33,11 @@ async function SettingsScreen({ params }: Props) {
   const access = await requireWorkspaceBySlug(slug);
   // Only the workspace's admins; to everyone else the page doesn't exist.
   if (!can(access.role, { settings: ["update"] })) notFound();
-  const [members, links, domain] = await Promise.all([
+  const [members, links, domain, pages] = await Promise.all([
     listMembers(access.organizationId),
     listActiveInviteLinks(access.organizationId),
     getAllowedDomain(access.organizationId),
+    listPages(slug),
   ]);
   const outsideDomain = domain ? members.filter((m) => !emailMatchesDomain(m.email, domain)).length : 0;
 
@@ -96,6 +98,7 @@ async function SettingsScreen({ params }: Props) {
               organizationId={access.organizationId}
               members={members}
               currentUserId={access.userId}
+              pages={pages}
             />
           </SettingsSection>
           <SettingsSection
@@ -104,10 +107,10 @@ async function SettingsScreen({ params }: Props) {
             description="Enlaces para que tu equipo entre en el espacio. Quien no tenga cuenta en Libreta necesitará además un enlace de registro."
           >
             <div className="flex flex-col gap-8">
-              <InviteLinkCreator organizationId={access.organizationId} />
+              <InviteLinkCreator organizationId={access.organizationId} pages={pages} />
               <div className="flex flex-col gap-3">
                 <h3 className="text-sm font-medium">Enlaces activos</h3>
-                <ActiveInviteLinks organizationId={access.organizationId} links={links} />
+                <ActiveInviteLinks organizationId={access.organizationId} links={links} pages={pages} />
               </div>
             </div>
           </SettingsSection>

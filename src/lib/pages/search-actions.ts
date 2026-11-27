@@ -15,5 +15,5 @@ export async function searchPagesAction(organizationId: string, query: string): 
   if (!input.success) return [];
 
   const access = await requireWorkspaceById(input.data.organizationId, { page: ["read"] });
-  return searchPages(access.organizationId, input.data.query, PALETTE_RESULTS);
+  return searchPages(access, input.data.query, PALETTE_RESULTS);
 }

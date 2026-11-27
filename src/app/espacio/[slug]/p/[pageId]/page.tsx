@@ -54,8 +54,11 @@ async function PageScreen({ params }: { params: Params }) {
   const { access } = page;
   const base = `/espacio/${access.slug}`;
   const subpages = childrenOf(pages, page.id);
-  const canDelete = can(access.role, { page: ["delete"] });
+  // A page shared with someone limited to some pages: they edit it, but it stays put.
+  const shared = access.pageScope?.includes(page.id) ?? false;
+  const canDelete = can(access.role, { page: ["delete"] }) && !shared;
   const canMove = can(access.role, { page: ["update"] });
+  const canReorder = canMove && !shared;
   const canExport = can(access.role, { page: ["export"] });
   const user = await requireUser();
   const realtime = realtimeEnabled()
@@ -79,7 +82,7 @@ async function PageScreen({ params }: { params: Params }) {
         ]}
       >
         {realtime ? <PresenceAvatars pageId={page.id} selfId={user.id} /> : null}
-        {canDelete || canMove || canExport ? (
+        {canDelete || canReorder || canExport ? (
           <PageMenu
             organizationId={access.organizationId}
             pageId={page.id}
@@ -87,7 +90,7 @@ async function PageScreen({ params }: { params: Params }) {
             canDelete={canDelete}
             canExport={canExport}
             move={
-              canMove
+              canReorder
                 ? {
                     ...siblingMoves(pages, page.id),
                     parentId: pages.find((p) => p.id === page.id)?.parentId ?? null,

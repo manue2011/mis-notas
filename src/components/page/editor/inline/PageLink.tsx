@@ -4,6 +4,7 @@ import type { MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 import { z } from "zod";
+import { useLimitedScope } from "@/components/workspace/scope-context";
 import { usePageEditor } from "../editor-context";
 import { previewStore } from "./preview-store";
 
@@ -16,8 +17,20 @@ export function PageLink({ pageId, savedTitle }: Props) {
   const { slug, pages } = usePageEditor();
   const router = useRouter();
 
+  const limited = useLimitedScope();
+
   const target = pages.find((p) => p.id === pageId);
   const title = (target ? target.title : savedTitle) || "Sin título";
+
+  // Someone limited to some pages doesn't learn the names of the others.
+  if (!target && limited) {
+    return (
+      <span className="page-link page-link--gone" title="No tienes acceso a esta página">
+        <FileText size={15} strokeWidth={1.5} aria-hidden />
+        Página sin acceso
+      </span>
+    );
+  }
 
   // Deleted (or never valid): keep the words, drop the link.
   if (!target || !isUuid(pageId)) {

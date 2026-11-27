@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useLimitedScope } from "@/components/workspace/scope-context";
 import type { PageMove } from "@/lib/pages/tree";
 
 export type MoveTarget = { id: string; label: string; depth: number };
@@ -22,6 +23,8 @@ const NBSP = "\u00a0";
 /** "Mover a…": pick the page this one goes inside (it lands last there). */
 export function MoveToForm({ pageId, currentParentId, targets, pending, onMove, onCancel }: Props) {
   const id = useId();
+  // Limited people keep pages inside the ones they were given.
+  const limited = useLimitedScope();
   const [parent, setParent] = useState(currentParentId ?? TOP_LEVEL);
 
   return (
@@ -42,7 +45,7 @@ export function MoveToForm({ pageId, currentParentId, targets, pending, onMove, 
         onChange={(e) => setParent(e.target.value)}
         className="min-h-11 w-full border-0 border-b border-field-line bg-transparent text-sm focus:border-accent-ink focus:outline-none"
       >
-        <option value={TOP_LEVEL}>Ninguna (primer nivel)</option>
+        {limited ? null : <option value={TOP_LEVEL}>Ninguna (primer nivel)</option>}
         {targets.map((t) => (
           <option key={t.id} value={t.id}>
             {NBSP.repeat(t.depth * 2)}

@@ -14,13 +14,15 @@ type Options = {
   pages: FlatPage[];
   expanded: Set<string>;
   setOpen: (ids: string[], open: boolean) => void;
+  /** Limited to some pages: nothing goes to the top level (see src/lib/pages/scope.ts). */
+  limited: boolean;
 };
 
 /**
  * Native HTML5 drag and drop for the sidebar tree. The top and bottom quarter
  * of a row drop before/after it; the middle drops inside it.
  */
-export function usePageDrag({ organizationId, pages, expanded, setOpen }: Options) {
+export function usePageDrag({ organizationId, pages, expanded, setOpen, limited }: Options) {
   const [optimisticPages, addMove] = useOptimistic(pages, (current: FlatPage[], move: PageMove) =>
     applyMove(current, move),
   );
@@ -37,6 +39,7 @@ export function usePageDrag({ organizationId, pages, expanded, setOpen }: Option
 
   function moveFor(target: PageNode, zone: DropZone): PageMove | null {
     if (!draggingId || target.id === draggingId) return null;
+    if (limited && zone !== "inside" && target.parentId === null) return null;
     if (zone === "inside") {
       return canMoveUnder(optimisticPages, draggingId, target.id)
         ? { pageId: draggingId, parentId: target.id, beforeId: null }

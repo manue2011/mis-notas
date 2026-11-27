@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { MarginNote } from "@/components/ui/MarginNote";
+import { useLimitedScope } from "@/components/workspace/scope-context";
 import { ancestorsOf, buildTree, type FlatPage } from "@/lib/pages/tree";
 import { useExpandedPages } from "./expanded-store";
 import { PageTreeItem } from "./PageTreeItem";
@@ -22,7 +23,8 @@ export function PageTree({ organizationId, slug, pages, canCreate, canMove }: Pr
   const pathname = usePathname();
   const currentId = pathname.match(/\/p\/([0-9a-f-]{36})/)?.[1] ?? null;
   const { expanded, setOpen } = useExpandedPages(organizationId);
-  const drag = usePageDrag({ organizationId, pages, expanded, setOpen });
+  const limited = useLimitedScope();
+  const drag = usePageDrag({ organizationId, pages, expanded, setOpen, limited });
   const tree = useMemo(() => buildTree(drag.pages), [drag.pages]);
 
   // Opening a page (from a link, search…) unfolds the branches above it.
@@ -44,6 +46,7 @@ export function PageTree({ organizationId, slug, pages, canCreate, canMove }: Pr
     setOpen,
     canCreate,
     canMove,
+    limited,
     draggingId: drag.draggingId,
     dropTarget: drag.dropTarget,
     onDragStart: drag.onDragStart,

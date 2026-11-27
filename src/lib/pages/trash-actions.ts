@@ -1,12 +1,13 @@
 "use server";
 
-import { and, eq, isNotNull, sql, type SQL } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { page } from "@/db/schema";
 import { purgeTrashedPages, PurgeImagesError } from "./purge";
+import { canSeePage, isScopeRoot, visiblePageIds } from "./scope";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 
 export type TrashActionResult = { ok: true } | { ok: false; error: string };
@@ -24,6 +25,7 @@ export async function restorePageAction(organizationId: string, pageId: string):
   if (!ids.success) return { ok: false, error: "Página no válida." };
   const access = await authorize(ids.data.organizationId);
   if (!("organizationId" in access)) return access;
+  if (!(await canSeePage(access, ids.data.pageId))) return { ok: false, error: NOT_IN_TRASH };
 
   const restored = await db.transaction(async (tx) => {
     const [root] = await tx
@@ -31,7 +33,7 @@ export async function restorePageAction(organizationId: string, pageId: string):
       .from(page)
       .where(inTrash(access.organizationId, ids.data.pageId))
       .for("update");
-    if (!root?.deletedAt) return false;
+    if (!root?.deletedAt) return "gone";
 
     if (root.parentId) {
       const [parent] = await tx
@@ -40,6 +42,8 @@ export async function restorePageAction(organizationId: string, pageId: string):
         .where(eq(page.id, root.parentId))
         .limit(1);
       if (!parent || parent.deletedAt) {
+        // Limited people can't put pages at the top level (outside their pages).
+        if (access.pageScope && !isScopeRoot(access, root.id)) return "parent-deleted";
         await tx
           .update(page)
           .set({
@@ -64,9 +68,12 @@ export async function restorePageAction(organizationId: string, pageId: string):
       update ${page} set deleted_at = null
       where ${page.id} in (select id from subtree)
     `);
-    return true;
+    return "restored";
   });
-  if (!restored) return { ok: false, error: NOT_IN_TRASH };
+  if (restored === "gone") return { ok: false, error: NOT_IN_TRASH };
+  if (restored === "parent-deleted") {
+    return { ok: false, error: "La página donde estaba también está en la papelera: restáurala primero." };
+  }
 
   revalidatePath(`/espacio/${access.slug}`, "layout");
   redirect(`/espacio/${access.slug}/p/${ids.data.pageId}`);
@@ -81,6 +88,10 @@ export async function deletePageForeverAction(organizationId: string, pageId: st
   if (!ids.success) return { ok: false, error: "Página no válida." };
   const access = await authorize(ids.data.organizationId);
   if (!("organizationId" in access)) return access;
+  if (!(await canSeePage(access, ids.data.pageId))) return { ok: false, error: NOT_IN_TRASH };
+  if (isScopeRoot(access, ids.data.pageId)) {
+    return { ok: false, error: "Esta página te la han compartido: no puedes borrarla para siempre." };
+  }
 
   return purge(access, eq(page.id, ids.data.pageId), NOT_IN_TRASH);
 }
@@ -92,7 +103,15 @@ export async function emptyTrashAction(organizationId: string): Promise<TrashAct
   const access = await authorize(id.data);
   if (!("organizationId" in access)) return access;
 
-  return purge(access, undefined, "La papelera ya está vacía.");
+  // Limited people empty only what was deleted inside their pages.
+  let roots: SQL | undefined;
+  const visible = await visiblePageIds(access);
+  if (visible) {
+    const ids = [...visible].filter((pageId) => !isScopeRoot(access, pageId));
+    if (ids.length === 0) return { ok: false, error: "La papelera ya está vacía." };
+    roots = inArray(page.id, ids);
+  }
+  return purge(access, roots, "La papelera ya está vacía.");
 }
 
 async function purge(access: WorkspaceAccess, roots: SQL | undefined, nothingLeft: string): Promise<TrashActionResult> {

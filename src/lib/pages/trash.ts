@@ -3,16 +3,19 @@ import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { page } from "@/db/schema";
 import { requireWorkspaceBySlug } from "@/lib/workspace/access";
+import { canSeePage, visiblePageIds } from "./scope";
 
 export type TrashEntry = Awaited<ReturnType<typeof listTrash>>[number];
 
 /**
  * What was deleted, one entry per delete: a page deleted with its sub-pages
  * shares one deletedAt with them, so only the page that was actually deleted
- * is listed, with the number of sub-pages below it.
+ * is listed, with the number of sub-pages below it. Limited people only see
+ * what was deleted inside their pages.
  */
 export async function listTrash(slug: string) {
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
+  const visible = await visiblePageIds(access);
   const { rows } = await db.execute<{
     id: string;
     title: string;
@@ -35,18 +38,21 @@ export async function listTrash(slug: string) {
       and (parent.id is null or parent.deleted_at is distinct from p.deleted_at)
     order by p.deleted_at desc
   `);
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    deletedAt: new Date(row.deleted_at),
-    deletedBy: row.deleted_by,
-    subpages: row.subpages,
-  }));
+  return rows
+    .filter((row) => !visible || visible.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      deletedAt: new Date(row.deleted_at),
+      deletedBy: row.deleted_by,
+      subpages: row.subpages,
+    }));
 }
 
 /** Title of a page in this workspace's trash, or null. */
 export async function getTrashedPageTitle(slug: string, pageId: string): Promise<string | null> {
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
+  if (!(await canSeePage(access, pageId))) return null;
   const [row] = await db
     .select({ title: page.title })
     .from(page)

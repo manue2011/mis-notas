@@ -7,6 +7,7 @@ import { page, pageVersion, user } from "@/db/schema";
 import { env } from "@/lib/env";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 import { pageContentSchema } from "./content";
+import { canSeePage } from "./scope";
 import { diffVersions, type VersionDiff } from "./version-diff";
 import { MAX_VERSIONS, recordPageVersion, type PageVersionKind } from "./versions";
 
@@ -36,6 +37,7 @@ async function access(organizationId: string, pageId: string, action: "read" | "
     if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message } as const;
     throw error;
   }
+  if (!(await canSeePage(found, ids.data.pageId))) return { ok: false, error: "Esta página ya no existe." } as const;
   // The page must be in this workspace (versions are looked up by page).
   const [row] = await db
     .select({ id: page.id })

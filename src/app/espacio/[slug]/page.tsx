@@ -26,7 +26,9 @@ async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">[
   const lastPageId = await getLastEditedPageId(slug);
   if (lastPageId) redirect(`/espacio/${slug}/p/${lastPageId}`);
 
-  const canCreate = can(access.role, { page: ["create"] });
+  // Limited people create pages inside the ones they were given, never here.
+  const limited = access.pageScope !== null;
+  const canCreate = can(access.role, { page: ["create"] }) && !limited;
   const trashed = (await listTrash(slug)).length;
 
   return (
@@ -38,7 +40,9 @@ async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">[
           <HandUnderline className="mt-1" />
         </h1>
         <div className="ruled mt-10 max-w-xl font-serif text-lg">
-          {trashed > 0 ? (
+          {limited ? (
+            <p>Todavía no te han compartido ninguna página de este cuaderno.</p>
+          ) : trashed > 0 ? (
             <p>
               No queda ninguna página a la vista: todo está en la{" "}
               <Link href={`/espacio/${access.slug}/papelera`} className="text-accent-ink underline underline-offset-4">
@@ -50,9 +54,11 @@ async function WorkspaceHome({ params }: { params: PageProps<"/espacio/[slug]">[
             <p>Este cuaderno está recién estrenado: ni una mancha de tinta todavía.</p>
           )}
           <p>
-            {canCreate
-              ? "Empieza por una página: unas notas, una lista, lo que tengas en la cabeza."
-              : "Cuando tus compañeros escriban la primera página, aparecerá aquí."}
+            {limited
+              ? "Cuando lo hagan, aparecerá aquí."
+              : canCreate
+                ? "Empieza por una página: unas notas, una lista, lo que tengas en la cabeza."
+                : "Cuando tus compañeros escriban la primera página, aparecerá aquí."}
           </p>
         </div>
         <div className="mt-12 flex flex-wrap items-start gap-10">

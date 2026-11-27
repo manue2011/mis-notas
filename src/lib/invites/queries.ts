@@ -57,6 +57,7 @@ export async function listActiveInviteLinks(organizationId: string) {
       expiresAt: inviteLink.expiresAt,
       maxUses: inviteLink.maxUses,
       uses: inviteLink.uses,
+      pageIds: inviteLink.pageIds,
       createdAt: inviteLink.createdAt,
       creatorName: user.name,
     })

@@ -21,6 +21,7 @@ export function PageTreeItem({ node, depth }: { node: PageNode; depth: number })
   const indent = Math.min(depth, MAX_INDENT_DEPTH) * INDENT_PX;
   const drop = tree.dropTarget?.id === node.id ? tree.dropTarget.zone : null;
   const dragging = tree.draggingId === node.id;
+  const draggable = tree.canMove && !(tree.limited && depth === 0);
 
   return (
     <li>
@@ -68,8 +69,8 @@ export function PageTreeItem({ node, depth }: { node: PageNode; depth: number })
         <Link
           href={href}
           aria-current={current ? "page" : undefined}
-          draggable={tree.canMove}
-          onDragStart={tree.canMove ? (e) => tree.onDragStart(e, node) : undefined}
+          draggable={draggable}
+          onDragStart={draggable ? (e) => tree.onDragStart(e, node) : undefined}
           onDragEnd={tree.onDragEnd}
           className={cx(
             "flex min-h-11 min-w-0 flex-1 items-center pr-2 text-[0.95rem]",

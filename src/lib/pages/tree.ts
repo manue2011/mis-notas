@@ -52,6 +52,38 @@ export function descendantIds(pages: FlatPage[], pageId: string): Set<string> {
   return found;
 }
 
+/** The given pages and every page below them (see src/lib/pages/scope.ts). */
+export function scopeIds(pages: { id: string; parentId: string | null }[], scope: string[]): Set<string> {
+  const known = new Set(pages.map((p) => p.id));
+  const found = new Set(scope.filter((id) => known.has(id)));
+  const children = new Map<string, string[]>();
+  for (const p of pages) {
+    if (p.parentId) children.set(p.parentId, [...(children.get(p.parentId) ?? []), p.id]);
+  }
+  const queue = [...found];
+  while (queue.length) {
+    for (const child of children.get(queue.shift()!) ?? []) {
+      if (!found.has(child)) {
+        found.add(child);
+        queue.push(child);
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * The tree as someone who sees only `visible` pages gets it (null: all).
+ * Pages whose parent they can't see sit at the top, so nothing hints at
+ * the pages around them.
+ */
+export function limitToScope<T extends FlatPage>(pages: T[], visible: Set<string> | null): T[] {
+  if (!visible) return pages;
+  return pages
+    .filter((p) => visible.has(p.id))
+    .map((p) => (p.parentId && !visible.has(p.parentId) ? { ...p, parentId: null } : p));
+}
+
 /** Where a page goes: under `parentId`, right before `beforeId` (or last). */
 export type PageMove = { pageId: string; parentId: string | null; beforeId: string | null };
 

@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { member } from "@/db/schema";
+import { member, memberPageScope } from "@/db/schema";
 import { ROLE_NAMES } from "@/lib/auth/permissions";
+import { pageScopeSchema, pagesExist } from "@/lib/pages/scope";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 
 export type MemberActionResult = { ok: true } | { ok: false; error: string };
@@ -52,10 +53,49 @@ export async function changeMemberRoleAction(
       const { target, hasOtherAdmin } = await lockMember(tx, access.organizationId, input.data.memberId);
       if (target.role === "admin" && input.data.role !== "admin" && !hasOtherAdmin) throw new MemberError(LAST_ADMIN);
       await tx.update(member).set({ role: input.data.role }).where(eq(member.id, target.id));
+      // Admins see the whole workspace: a pick of pages no longer applies.
+      if (input.data.role === "admin") await tx.delete(memberPageScope).where(eq(memberPageScope.memberId, target.id));
       demotedSelf = target.userId === access.userId && input.data.role !== "admin";
     });
     // Without admin rights the settings screen is gone for them.
     return demotedSelf ? `/espacio/${access.slug}` : undefined;
+  });
+}
+
+/**
+ * Which pages a member sees: null for the whole workspace, or a pick of
+ * pages (with everything inside them). Admins always see everything.
+ */
+export async function setMemberPagesAction(
+  organizationId: string,
+  memberId: string,
+  pageIds: string[] | null,
+): Promise<MemberActionResult> {
+  const input = z
+    .object({ organizationId: z.string().min(1), memberId: z.string().min(1), pageIds: pageScopeSchema })
+    .safeParse({ organizationId, memberId, pageIds });
+  if (!input.success) return { ok: false, error: "Elige al menos una página, o «Todo el cuaderno»." };
+
+  return run(input.data.organizationId, async (access) => {
+    const pages = input.data.pageIds;
+    if (pages && !(await pagesExist(access.organizationId, pages))) {
+      throw new MemberError("Una de las páginas ya no existe. Recarga y vuelve a elegir.");
+    }
+    await db.transaction(async (tx) => {
+      const { target } = await lockMember(tx, access.organizationId, input.data.memberId);
+      if (target.role === "admin") throw new MemberError("Los administradores ven siempre todo el cuaderno.");
+      if (!pages) {
+        await tx.delete(memberPageScope).where(eq(memberPageScope.memberId, target.id));
+        return;
+      }
+      await tx
+        .insert(memberPageScope)
+        .values({ memberId: target.id, organizationId: access.organizationId, pageIds: [...new Set(pages)] })
+        .onConflictDoUpdate({
+          target: memberPageScope.memberId,
+          set: { pageIds: [...new Set(pages)], updatedAt: new Date() },
+        });
+    });
   });
 }
 

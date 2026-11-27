@@ -1,8 +1,10 @@
 import "server-only";
-import { and, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { page } from "@/db/schema";
+import type { WorkspaceAccess } from "@/lib/workspace/access";
+import { visiblePageIds } from "./scope";
 import { searchTerms } from "./search-terms";
 
 export type SearchHit = {
@@ -27,15 +29,16 @@ const escapeLike = (term: string) => term.replace(/[\\%_]/g, "\\$&");
 /**
  * Live pages of a workspace whose title or text contains every word of the
  * query, ignoring case and accents. Title matches first, then most recent.
- * Callers must have checked the user may read the workspace.
+ * Only the pages this person may see (see ./scope).
  */
 export async function searchPages(
-  organizationId: string,
+  access: WorkspaceAccess,
   query: string,
   limit = MAX_RESULTS,
 ): Promise<SearchHit[]> {
   const terms = searchTerms(query);
-  if (terms.length === 0) return [];
+  const visible = await visiblePageIds(access);
+  if (terms.length === 0 || visible?.size === 0) return [];
 
   const haystack = fold(sql`${page.title} || ' ' || ${page.searchText}`);
   const contains = (target: SQL, term: string) => sql`${target} like '%' || ${fold(escapeLike(term))} || '%'`;
@@ -62,8 +65,9 @@ export async function searchPages(
     .from(page)
     .where(
       and(
-        eq(page.organizationId, organizationId),
+        eq(page.organizationId, access.organizationId),
         isNull(page.deletedAt),
+        visible ? inArray(page.id, [...visible]) : undefined,
         ...terms.map((term) => contains(haystack, term)),
       ),
     )

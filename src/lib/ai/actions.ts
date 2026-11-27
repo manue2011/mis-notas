@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { aiUsage, page } from "@/db/schema";
 import { aiEnabled, env } from "@/lib/env";
 import { pageContentSchema, pageTitleSchema } from "@/lib/pages/content";
+import { canSeePage } from "@/lib/pages/scope";
 import { requireWorkspaceById, WorkspaceForbiddenError, type WorkspaceAccess } from "@/lib/workspace/access";
 import { groqChat, GroqError } from "./groq";
 import { checkTidyMarkdown, splitTidyAnswer, toTidyMarkdown, type TidyBlock } from "./tidy-markdown";
@@ -71,6 +72,7 @@ export async function tidyPageAction(
     if (error instanceof WorkspaceForbiddenError) return { ok: false, error: error.message };
     throw error;
   }
+  if (!(await canSeePage(access, input.data.pageId))) return { ok: false, error: "Esta página ya no existe." };
 
   const content = pageContentSchema({
     organizationId: access.organizationId,

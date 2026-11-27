@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { page } from "@/db/schema";
 import { pageTitleSchema } from "@/lib/pages/content";
+import { canCreateUnder } from "@/lib/pages/scope";
 import { requireWorkspaceById, WorkspaceForbiddenError } from "@/lib/workspace/access";
 
 export type CreatedPages = { ok: true; ids: string[] } | { ok: false; error: string };
@@ -41,6 +42,12 @@ export async function createImportedPagesAction(
     throw error;
   }
   const { organizationId: orgId, userId } = access;
+
+  for (const item of input.data.pages) {
+    if (!(await canCreateUnder(access, item.parentId))) {
+      return { ok: false, error: "Crea las páginas nuevas dentro de las tuyas." };
+    }
+  }
 
   const parents = [...new Set(input.data.pages.map((p) => p.parentId).filter((id): id is string => id !== null))];
   if (parents.length) {

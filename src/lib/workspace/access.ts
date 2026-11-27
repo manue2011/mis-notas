@@ -3,7 +3,7 @@ import { and, eq, type SQL } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
-import { member, organization, workspaceSettings } from "@/db/schema";
+import { member, memberPageScope, organization, workspaceSettings } from "@/db/schema";
 import type { AccentKey } from "@/lib/accent";
 import { requireUser } from "@/lib/auth/session";
 import { roles, type Permissions, type RoleName } from "@/lib/auth/permissions";
@@ -17,6 +17,11 @@ export type WorkspaceAccess = {
   font: "serif" | "sans" | "mono";
   role: RoleName;
   userId: string;
+  /**
+   * The pages this person may see, with everything inside them; null for
+   * the whole workspace (always for admins). See src/lib/pages/scope.ts.
+   */
+  pageScope: string[] | null;
 };
 
 export class WorkspaceForbiddenError extends Error {
@@ -43,14 +48,16 @@ async function findAccess(userId: string, where: SQL): Promise<WorkspaceAccess |
       icon: workspaceSettings.icon,
       font: workspaceSettings.font,
       role: member.role,
+      pageScope: memberPageScope.pageIds,
     })
     .from(member)
     .innerJoin(organization, eq(member.organizationId, organization.id))
     .innerJoin(workspaceSettings, eq(workspaceSettings.organizationId, organization.id))
+    .leftJoin(memberPageScope, eq(memberPageScope.memberId, member.id))
     .where(and(eq(member.userId, userId), where))
     .limit(1);
   if (!row || !isRoleName(row.role)) return null;
-  return { ...row, role: row.role, userId };
+  return { ...row, role: row.role, userId, pageScope: row.role === "admin" ? null : row.pageScope };
 }
 
 /** The current user's access to a workspace, or null if they aren't a member. */

@@ -1,5 +1,7 @@
 import { formatDate } from "@/lib/format";
 import { roleLabel } from "@/lib/members/roles";
+import { scopeSummary } from "@/lib/pages/scope-summary";
+import type { FlatPage } from "@/lib/pages/tree";
 import { RevokeLinkButton } from "./RevokeLinkButton";
 
 type Link = {
@@ -8,12 +10,15 @@ type Link = {
   expiresAt: Date;
   maxUses: number | null;
   uses: number;
+  pageIds: string[] | null;
   createdAt: Date;
   creatorName: string | null;
 };
 
 /** Links that still let people in, each with "Anular". */
-export function ActiveInviteLinks({ organizationId, links }: { organizationId: string; links: Link[] }) {
+type Props = { organizationId: string; links: Link[]; pages: FlatPage[] };
+
+export function ActiveInviteLinks({ organizationId, links, pages }: Props) {
   if (links.length === 0) {
     return <p className="text-sm text-ink-muted">No hay enlaces activos: ahora mismo nadie puede entrar con uno.</p>;
   }
@@ -25,6 +30,7 @@ export function ActiveInviteLinks({ organizationId, links }: { organizationId: s
             <span className="font-medium">
               {roleLabel(link.role)} · caduca el {formatDate(link.expiresAt)}
             </span>
+            <span>Ven: {link.role === "admin" ? "Todo el cuaderno" : scopeSummary(pages, link.pageIds)}</span>
             <span className="text-ink-muted">
               {link.maxUses === null
                 ? `${link.uses} ${link.uses === 1 ? "uso" : "usos"}, sin límite`

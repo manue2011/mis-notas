@@ -15,6 +15,8 @@ export type PageTreeContextValue = {
   setOpen: (ids: string[], open: boolean) => void;
   canCreate: boolean;
   canMove: boolean;
+  /** Limited to some pages: the ones at the top were shared with them and stay put. */
+  limited: boolean;
   draggingId: string | null;
   dropTarget: { id: string; zone: DropZone } | null;
   onDragStart: (event: DragEvent, node: PageNode) => void;

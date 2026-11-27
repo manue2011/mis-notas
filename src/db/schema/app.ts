@@ -15,7 +15,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organization, user } from "./auth";
+import { member, organization, user } from "./auth";
 
 /** Raw bytes (Postgres bytea), for the Yjs document state. */
 const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
@@ -66,6 +66,8 @@ export const inviteLink = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     maxUses: integer("max_uses"),
     uses: integer("uses").notNull().default(0),
+    // Pages whoever joins with it may see (see memberPageScope); null: all of them.
+    pageIds: uuid("page_ids").array(),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -75,6 +77,20 @@ export const inviteLink = pgTable(
     index("invite_link_org_idx").on(t.organizationId),
   ],
 );
+
+// Members who see only some pages of a workspace, and everything inside them.
+// No row: the whole workspace. Admins always see everything. A row with no
+// pages left (they were deleted for good) shows nothing rather than all.
+export const memberPageScope = pgTable("member_page_scope", {
+  memberId: text("member_id")
+    .primaryKey()
+    .references(() => member.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  pageIds: uuid("page_ids").array().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // App-wide, single-use links that let someone create an account. Only the
 // superadmin creates them; sign-up is closed otherwise.

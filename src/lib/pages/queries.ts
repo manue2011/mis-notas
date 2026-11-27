@@ -1,9 +1,11 @@
 import "server-only";
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { cache } from "react";
 import { db } from "@/db";
 import { page, user } from "@/db/schema";
 import { requireWorkspaceBySlug } from "@/lib/workspace/access";
+import { canSeePage, visiblePageIds } from "./scope";
+import { limitToScope } from "./tree";
 
 export type PageSummary = Awaited<ReturnType<typeof listPages>>[number];
 export type PageDetail = NonNullable<Awaited<ReturnType<typeof getPage>>>;
@@ -11,30 +13,40 @@ export type PageDetail = NonNullable<Awaited<ReturnType<typeof getPage>>>;
 const live = (organizationId: string) =>
   and(eq(page.organizationId, organizationId), isNull(page.deletedAt));
 
-/** Live pages of a workspace in tree order (flat; see `buildTree`). */
+/**
+ * Live pages of a workspace in tree order (flat; see `buildTree`), as this
+ * person sees them: only their pages if they're limited to some.
+ */
 export const listPages = cache(async (slug: string) => {
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
-  return db
-    .select({ id: page.id, title: page.title, parentId: page.parentId })
-    .from(page)
-    .where(live(access.organizationId))
-    .orderBy(asc(page.position), asc(page.createdAt));
+  const [pages, visible] = await Promise.all([
+    db
+      .select({ id: page.id, title: page.title, parentId: page.parentId })
+      .from(page)
+      .where(live(access.organizationId))
+      .orderBy(asc(page.position), asc(page.createdAt)),
+    visiblePageIds(access),
+  ]);
+  return limitToScope(pages, visible);
 });
 
 export async function getLastEditedPageId(slug: string): Promise<string | null> {
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
+  const visible = await visiblePageIds(access);
+  if (visible?.size === 0) return null;
   const [row] = await db
     .select({ id: page.id })
     .from(page)
-    .where(live(access.organizationId))
+    .where(and(live(access.organizationId), visible ? inArray(page.id, [...visible]) : undefined))
     .orderBy(desc(page.updatedAt))
     .limit(1);
   return row?.id ?? null;
 }
 
-/** A page of the workspace, or null if it doesn't exist there (or was deleted). */
+/** A page of the workspace, or null if it doesn't exist there (or was deleted, or isn't theirs to see). */
 export const getPage = cache(async (slug: string, pageId: string) => {
   const access = await requireWorkspaceBySlug(slug, { page: ["read"] });
+  if (!(await canSeePage(access, pageId))) return null;
   const [row] = await db
     .select({
       id: page.id,
