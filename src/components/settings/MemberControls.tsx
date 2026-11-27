@@ -37,7 +37,7 @@ export function MemberControls({ organizationId, memberId, name, role, isSelf }:
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 sm:items-end">
+    <div className="flex flex-col items-start gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <label className="sr-only" htmlFor={`role-${memberId}`}>
           Rol de {name}

@@ -1,33 +1,55 @@
+import { PersonRow, SearchableList } from "@/components/ui/SearchableList";
 import { listUsers } from "@/lib/admin/queries";
 import { isSuperadmin } from "@/lib/auth/session";
 import { formatDate } from "@/lib/format";
 import { BanButton } from "./BanButton";
 import { SetPasswordForm } from "./SetPasswordForm";
 
+/** One line per account; changing the password and blocking unfold under it. */
 export async function UserList({ currentUserId }: { currentUserId: string }) {
   const users = await listUsers();
 
   return (
-    <ul className="divide-y divide-border border-y border-border">
-      {users.map((u) => {
+    <SearchableList
+      noun={{ one: "persona", many: "personas" }}
+      rows={users.map((u) => {
         const isSelf = u.id === currentUserId;
-        return (
-          <li key={u.id} className="flex flex-col gap-3 py-4">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className="font-medium">{u.name}</p>
-              <p className="text-sm text-ink-muted">{u.email}</p>
-              {isSuperadmin(u) ? <Badge>superadmin</Badge> : null}
-              {u.banned ? <Badge tone="error">bloqueado</Badge> : null}
-              <p className="text-sm text-ink-muted sm:ml-auto">Desde el {formatDate(u.createdAt)}</p>
-            </div>
-            <div className="flex flex-wrap items-start gap-2">
-              <SetPasswordForm userId={u.id} userName={u.name} />
-              {isSelf ? null : <BanButton userId={u.id} banned={Boolean(u.banned)} />}
-            </div>
-          </li>
-        );
+        return {
+          key: u.id,
+          search: `${u.name} ${u.email}`,
+          node: (
+            <PersonRow
+              summary={
+                <>
+                  <span
+                    aria-hidden
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-panel text-sm font-semibold text-ink-muted"
+                  >
+                    {u.name.trim().charAt(0).toUpperCase() || "·"}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-2">
+                      <span className="truncate font-medium">{u.name}</span>
+                      {isSuperadmin(u) ? <Badge>superadmin</Badge> : null}
+                      {u.banned ? <Badge tone="error">bloqueado</Badge> : null}
+                    </span>
+                    <span className="truncate text-sm text-ink-muted">{u.email}</span>
+                  </span>
+                  <span className="hidden shrink-0 text-sm text-ink-muted sm:block">
+                    Desde el {formatDate(u.createdAt)}
+                  </span>
+                </>
+              }
+            >
+              <div className="flex flex-wrap items-start gap-2">
+                <SetPasswordForm userId={u.id} userName={u.name} />
+                {isSelf ? null : <BanButton userId={u.id} banned={Boolean(u.banned)} />}
+              </div>
+            </PersonRow>
+          ),
+        };
       })}
-    </ul>
+    />
   );
 }
 
