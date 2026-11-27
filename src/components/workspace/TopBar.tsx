@@ -6,7 +6,7 @@ type Crumb = { label: string; href?: string };
 /** Breadcrumb ("Equipo Diseño / Exportar desde Figma") plus page actions on the right. */
 export function TopBar({ crumbs, children }: { crumbs: Crumb[]; children?: ReactNode }) {
   return (
-    <header className="flex min-h-16 items-center justify-between gap-4 border-b border-dashed border-border px-6 md:px-8">
+    <header className="flex min-h-16 items-center justify-between gap-4 border-b border-dashed border-border px-6 md:px-8 print:hidden">
       <nav aria-label="Ruta" className="flex min-w-0 items-center gap-2 text-sm text-ink-muted">
         {crumbs.map((crumb, i) => {
           const last = i === crumbs.length - 1;

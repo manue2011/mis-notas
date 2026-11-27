@@ -34,7 +34,7 @@ export function WorkspaceFrame({ sidebar, children }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <div className="flex items-center justify-between border-b border-border bg-panel px-4 py-2 md:hidden">
+      <div className="flex items-center justify-between border-b border-border bg-panel px-4 py-2 md:hidden print:hidden">
         <Logo />
         <div className="flex items-center">
           <button
@@ -62,7 +62,7 @@ export function WorkspaceFrame({ sidebar, children }: Props) {
       <aside
         id="workspace-sidebar"
         className={cx(
-          "border-border bg-panel md:sticky md:top-0 md:block md:h-screen md:w-[260px] md:shrink-0 md:overflow-y-auto md:border-r",
+          "border-border bg-panel md:sticky md:top-0 md:block md:h-screen md:w-[260px] md:shrink-0 md:overflow-y-auto md:border-r print:hidden",
           open ? "block border-b" : "hidden",
         )}
       >

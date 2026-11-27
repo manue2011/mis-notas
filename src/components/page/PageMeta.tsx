@@ -43,7 +43,7 @@ export function PageMeta({ liveStatus, editorName, updatedAt, status, error, his
   }, []);
 
   return (
-    <p className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-ink-muted">
+    <p className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-ink-muted print:hidden">
       <span>
         Editado{editorName ? ` por ${editorName}` : ""}
         {now ? ` · ${timeAgo(updatedAt, now)}` : ""}

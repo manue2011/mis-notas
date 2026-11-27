@@ -16,7 +16,7 @@ export function SubpageList({ slug, organizationId, pageId, subpages, canCreate 
   if (subpages.length === 0 && !canCreate) return null;
 
   return (
-    <section aria-labelledby="subpages-title" className="mx-auto w-full max-w-3xl px-6 pb-16 md:px-16">
+    <section aria-labelledby="subpages-title" className="mx-auto w-full max-w-3xl px-6 pb-16 md:px-16 print:hidden">
       <div className="border-t border-dashed border-border pt-6">
         <h2 id="subpages-title" className="text-xs font-semibold tracking-[0.08em] text-ink-muted uppercase">
           Dentro de esta página

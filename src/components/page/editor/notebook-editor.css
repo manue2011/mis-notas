@@ -246,3 +246,53 @@
   text-decoration: line-through;
   cursor: default;
 }
+
+/*
+ * Printing ("Descargar PDF"): keep the colours that carry meaning (sticky
+ * notes, tape, code, table headers) but not the notebook lines, which only
+ * help on screen. Closed toggles print open: a PDF has no clicking.
+ * Photos and notes don't break across sheets.
+ */
+@media print {
+  .notebook-editor {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .notebook-editor .bn-block-content {
+    background-image: none !important;
+  }
+  .notebook-editor .bn-toggle-frame > .bn-toggle-slot > .bn-block-group {
+    display: block !important;
+  }
+  .notebook-editor .bn-toggle-button[aria-expanded="false"] > svg {
+    transform: rotate(90deg);
+  }
+  .notebook-editor .bn-side-menu,
+  .notebook-editor .bn-toolbar,
+  .notebook-editor .bn-toggle-add-block-button,
+  .notebook-editor .screenshot-block button,
+  .notebook-editor [class*="collaboration-cursor"] {
+    display: none !important;
+  }
+  /* No "Escribe…" hints, and no room kept for a photo without a caption. */
+  .notebook-editor .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after,
+  .notebook-editor .screenshot-caption::after,
+  .notebook-editor .sticky-note-text::after {
+    content: none !important;
+  }
+  .notebook-editor .screenshot-caption:has(.ProseMirror-trailingBreak:only-child) {
+    display: none;
+  }
+  .notebook-editor .bn-inline-content {
+    overflow-wrap: anywhere;
+  }
+  .notebook-editor .screenshot-block,
+  .notebook-editor .sticky-note-block,
+  .notebook-editor [data-content-type="codeBlock"],
+  .notebook-editor table {
+    break-inside: avoid;
+  }
+  .notebook-editor [data-content-type="heading"] {
+    break-after: avoid;
+  }
+}

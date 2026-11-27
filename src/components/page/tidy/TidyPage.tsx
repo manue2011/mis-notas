@@ -79,7 +79,7 @@ export function TidyPage({ title, editorRef, ...previewProps }: Props) {
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm print:hidden">
       {undo ? (
         <p role="status" className="flex flex-wrap items-center gap-x-2 text-ink-muted">
           Página ordenada.

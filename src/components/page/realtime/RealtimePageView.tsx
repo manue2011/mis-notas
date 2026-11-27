@@ -82,7 +82,7 @@ export function RealtimePageView(props: Props) {
   const editorProps = { organizationId, slug, pageId, pages, ownImagePattern, onReady: handleReady };
 
   return (
-    <article className="mx-auto w-full max-w-3xl px-6 py-10 md:px-16 md:py-14">
+    <article className="mx-auto w-full max-w-3xl px-6 py-10 md:px-16 md:py-14 print:max-w-none print:p-0">
       {live ? (
         <LiveTitle doc={live.doc} editable={canEdit} onEnter={() => editorRef.current?.focus()} />
       ) : (

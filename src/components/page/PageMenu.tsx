@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, Ellipsis, FolderInput, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Ellipsis, FileDown, FolderInput, Trash2 } from "lucide-react";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { Button } from "@/components/ui/Button";
 import { deletePageAction } from "@/lib/pages/actions";
@@ -9,12 +9,15 @@ import { movePageAction } from "@/lib/pages/move";
 import type { PageMove } from "@/lib/pages/tree";
 import { MoveToForm, type MoveTarget } from "./MoveToForm";
 import { PageMenuItem } from "./PageMenuItem";
+import { printPage } from "./print-page";
 
 type Props = {
   organizationId: string;
   pageId: string;
   hasSubpages: boolean;
   canDelete: boolean;
+  /** "Descargar PDF" (admins only). */
+  canExport: boolean;
   /** Present when the person may reorder pages (the keyboard-friendly way to "drag"). */
   move?: {
     up: PageMove | null;
@@ -27,7 +30,7 @@ type Props = {
 type View = "menu" | "delete" | "move";
 
 /** "⋯" menu in the top bar. Deleting asks for confirmation inside the menu. */
-export function PageMenu({ organizationId, pageId, hasSubpages, canDelete, move }: Props) {
+export function PageMenu({ organizationId, pageId, hasSubpages, canDelete, canExport, move }: Props) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("menu");
   const [error, setError] = useState<string | null>(null);
@@ -142,8 +145,20 @@ export function PageMenu({ organizationId, pageId, hasSubpages, canDelete, move 
                   </PageMenuItem>
                 </>
               ) : null}
+              {canExport ? (
+                <PageMenuItem
+                  icon={FileDown}
+                  autoFocus={!move}
+                  onClick={() => {
+                    close();
+                    printPage();
+                  }}
+                >
+                  Descargar PDF
+                </PageMenuItem>
+              ) : null}
               {canDelete ? (
-                <PageMenuItem icon={Trash2} autoFocus={!move} danger onClick={() => setView("delete")}>
+                <PageMenuItem icon={Trash2} autoFocus={!move && !canExport} danger onClick={() => setView("delete")}>
                   Borrar página
                 </PageMenuItem>
               ) : null}

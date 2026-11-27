@@ -68,7 +68,7 @@ function SavedPageView(props: Props) {
   }, []);
 
   return (
-    <article className="mx-auto w-full max-w-3xl px-6 py-10 md:px-16 md:py-14">
+    <article className="mx-auto w-full max-w-3xl px-6 py-10 md:px-16 md:py-14 print:max-w-none print:p-0">
       <PageTitle
         initialTitle={title}
         editable={editable}

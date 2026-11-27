@@ -3,7 +3,8 @@ import { adminAc, defaultStatements } from "better-auth/plugins/organization/acc
 
 const statement = {
   ...defaultStatements,
-  page: ["read", "create", "update", "delete"],
+  // export: download a page as PDF (admins only).
+  page: ["read", "create", "update", "delete", "export"],
   asset: ["read", "create", "delete"],
   settings: ["update"],
   inviteLink: ["create", "revoke"],
@@ -24,7 +25,7 @@ export const editor = ac.newRole({
 export const admin = ac.newRole({
   ...adminAc.statements,
   organization: ["update", "delete"],
-  page: ["read", "create", "update", "delete"],
+  page: ["read", "create", "update", "delete", "export"],
   asset: ["read", "create", "delete"],
   settings: ["update"],
   inviteLink: ["create", "revoke"],

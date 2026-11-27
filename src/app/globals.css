@@ -223,6 +223,48 @@ body {
   --version-changed: color-mix(in oklch, var(--sticky) var(--version-mark-share), transparent);
 }
 
+/* "Descargar PDF" prints the open page: just the note, on white paper.
+   Everything else on screen carries print:hidden. */
+@media print {
+  @page {
+    margin: 18mm 16mm;
+  }
+  /* Always the light paper, also in dark mode: the light values from :root,
+     stronger than the dark blocks above — keep the lists in step. */
+  :root:root:root {
+    color-scheme: light;
+    --paper-0: #f5efe3;
+    --panel-0: #ede5d4;
+    --surface-0: #fbf8f1;
+    --ink: #2a251f;
+    --ink-muted-0: #6b6156;
+    --border-0: #dcd2bf;
+    --rule-0: #e3d9c6;
+    --field-line-0: #cfc4ae;
+    --error: #a33a26;
+    --on-error: #ffffff;
+    --sticky: #f2de8f;
+    --version-mark-share: 70%;
+    --photo: #ffffff;
+    --code-bg: #2a251f;
+    --accent-ink-share: 100%;
+    --accent-ink-depth: 92%;
+    --accent-soft-share: 16%;
+    --tint-source-share: 40%;
+    --tint-base: white;
+    --tint-paper-share: 22%;
+    --tint-panel-share: 35%;
+    --tint-surface-share: 10%;
+    --tint-line-share: 30%;
+    --tint-muted-depth: 30%;
+    --shadow-paper: 0 1px 2px rgb(42 37 31 / 0.08), 0 6px 16px -6px rgb(42 37 31 / 0.18);
+  }
+  body,
+  .accent-tint {
+    background: white;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -56,6 +56,7 @@ async function PageScreen({ params }: { params: Params }) {
   const subpages = childrenOf(pages, page.id);
   const canDelete = can(access.role, { page: ["delete"] });
   const canMove = can(access.role, { page: ["update"] });
+  const canExport = can(access.role, { page: ["export"] });
   const user = await requireUser();
   const realtime = realtimeEnabled()
     ? { url: env().REALTIME_URL!, user: { id: user.id, name: user.name } }
@@ -78,12 +79,13 @@ async function PageScreen({ params }: { params: Params }) {
         ]}
       >
         {realtime ? <PresenceAvatars pageId={page.id} selfId={user.id} /> : null}
-        {canDelete || canMove ? (
+        {canDelete || canMove || canExport ? (
           <PageMenu
             organizationId={access.organizationId}
             pageId={page.id}
             hasSubpages={subpages.length > 0}
             canDelete={canDelete}
+            canExport={canExport}
             move={
               canMove
                 ? {
